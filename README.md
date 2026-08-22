@@ -83,7 +83,10 @@ Essence buys four things, and none of it can be done mid-fight:
 
 ## The city
 
-A 608-metre grid of streets and blocks with traffic running the roads, people on the
+Every sector builds its own ground. Four terrains — city blocks and straight streets,
+crowded uneven towers, low wide halls with open ground between them, and open ground with a
+few masses on it — so Sanctum Sanctorum does not look like Hell's Kitchen in a different
+colour. A 608-metre grid with traffic running the roads, people on the
 pavement who scatter when a fight starts, street lamps and cars you can wreck, and
 buildings that stand on pillars so you can walk in under them. The sun goes round on an
 eight-minute cycle — dawn, noon, dusk, night with the windows lit — and it rains about
