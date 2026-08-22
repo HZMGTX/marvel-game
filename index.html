@@ -109,7 +109,7 @@ body{
 .abtn--power{border-color:var(--ion)}
 .abtn--util{border-color:var(--good)}
 .abtn--ult{border-color:var(--flare)}
-#extra{position:absolute;right:calc(12px + var(--safe-r));bottom:calc(160px + var(--safe-b));display:flex;gap:8px;flex-direction:column;align-items:flex-end}
+#extra{position:absolute;right:calc(12px + var(--safe-r));bottom:calc(160px + var(--safe-b));display:flex;gap:6px;flex-direction:column;align-items:flex-end;max-height:56vh;flex-wrap:wrap-reverse}
 .xbtn{border:2px solid var(--line);background:rgba(20,17,39,.82);padding:7px 11px;font-family:var(--f-display);font-size:11px;text-transform:uppercase;cursor:pointer}
 .xbtn[data-on="1"]{border-color:var(--gold);color:var(--gold)}
 .xbtn:active{background:var(--panel-2)}
@@ -235,8 +235,11 @@ input[type="search"],select{font:inherit;font-size:13px;padding:8px 10px;border:
   <div class="hud-zone" id="stick"><div class="nub" id="nub"></div></div>
 
   <div class="hud-zone" id="extra">
-    <button class="xbtn" id="btn-fly">Fly</button>
+    <button class="xbtn" id="btn-lock">Lock</button>
     <button class="xbtn" id="btn-surge">Surge</button>
+    <button class="xbtn" id="btn-block">Guard</button>
+    <button class="xbtn" id="btn-dodge">Roll</button>
+    <button class="xbtn" id="btn-fly">Fly</button>
     <button class="xbtn" id="btn-jump">Jump</button>
   </div>
 
@@ -2454,6 +2457,11 @@ function mitigationK(def){ return 44 + 13*def.b.tier; }
 const dist3 = (a,b) => Math.hypot(a.x-b.x, a.y-b.y, a.z-b.z);
 const distXZ = (a,b) => Math.hypot(a.x-b.x, a.z-b.z);
 
+const BLOCK_CUT    = 0.30;   /* damage that still gets through a guard */
+const PARRY_WINDOW = 240;    /* ms from raising the guard */
+const BLOCK_DRAIN  = 22;     /* energy per second held */
+const POISE_FRAC   = 0.26;   /* share of max health that breaks a stance */
+const STAGGER_MS   = 1200;
 const PLAYER_HP_MULT = 1.7;
 const ENEMY_DMG_MULT = 0.55;
 const HIT_IFRAME = 340;
@@ -2482,6 +2490,51 @@ function dealDamage(att, def, mul, o){
   if(def.ai && def.ai.fx==="assist" && !def.usedAssist && def.hp-dmg < def.maxHp*.25 && def.hp > def.maxHp*.25){
     def.usedAssist = true; feed(def.ai.name+" cancels the hit.","good"); return 0;
   }
+  /* a guard, and the moment at the start of it that turns a hit around */
+  if(def.blocking && !o.unblockable){
+    const facing = Math.atan2(att.x-def.x, att.z-def.z);
+    let rel = facing - def.yaw;
+    while(rel >  Math.PI) rel -= 6.2832;
+    while(rel < -Math.PI) rel += 6.2832;
+    if(Math.abs(rel) < 1.35){                       /* only what you face */
+      if(now() - (def.blockStart||0) < PARRY_WINDOW){
+        setFx(att, "stun", 950);
+        att.poise = 0;
+        att.hp -= Math.round(dmg*0.25);
+        G.freeze = Math.max(G.freeze, 110);
+        G.shake += 0.5;
+        shock(def.x, def.y+1.0, def.z, 2.4, GOLD3, 380);
+        G.pops.push({x:def.x, y:def.y+def.height*1.1, z:def.z, txt:"PARRY", t:0, life:900,
+                     col:"#F7BC46", size:22});
+        if(att.hp<=0) killEnt(att);
+        if(def.team==="you") G.lastCombat = now();
+        return 0;
+      }
+      dmg = Math.max(1, Math.round(dmg*BLOCK_CUT));
+      def.nrg -= 14;
+      spark(def.x, def.y+1.0, def.z, 5, GUARD3);
+      if(def.nrg <= 0){                              /* guard broken */
+        def.nrg = 0; def.blocking = false;
+        setFx(def, "stun", 700);
+        G.pops.push({x:def.x, y:def.y+def.height*1.05, z:def.z, txt:"GUARD BROKEN", t:0,
+                     life:900, col:"#FF5340", size:16});
+      }
+    }
+  }
+
+  /* poise: enough punishment in a short window and the stance breaks */
+  def.poise = (def.poise||0) + dmg;
+  if(now() - (def.poiseT||0) > 2600) def.poise = dmg;
+  def.poiseT = now();
+  if(!hasFx(def,"stun") && def.poise > def.maxHp*POISE_FRAC){
+    def.poise = 0;
+    setFx(def, "stun", STAGGER_MS);
+    G.pops.push({x:def.x, y:def.y+def.height*1.05, z:def.z, txt:"STAGGERED", t:0, life:1000,
+                 col:"#F7BC46", size:16});
+    shock(def.x, def.y+0.3, def.z, 1.6, GOLD3, 340);
+  }
+  if(hasFx(def,"stun")) dmg = Math.round(dmg*1.4);   /* free hits on a broken stance */
+
   def.hp -= dmg;
   def.hitT = now(); def.lastHurt = now();
   if(att.team==="you" || def.team==="you") G.lastCombat = now();
@@ -2498,6 +2551,9 @@ function dealDamage(att, def, mul, o){
   if(o.mark)  setFx(def,"mark",4000);
   if(o.stun)  setFx(def,"stun",o.stun);
   if(o.drain) att.hp = Math.min(att.maxHp, att.hp + dmg*o.drain);
+  /* the world stops for a breath when something really lands */
+  if(att.team === "you" && (isCrit || dmg > def.maxHp*0.09))
+    G.freeze = Math.max(G.freeze, isCrit ? 95 : 65);
   popNumber(def, dmg, isCrit, att.team==="you");
   spark(def.x, def.y + def.height*0.62, def.z, isCrit?14:7, att.team==="you"?SPARK_A:SPARK_B);
   if(att.team==="you"){ G.combo++; G.comboT = now()+2200; G.surge = Math.min(100, G.surge + dmg/def.maxHp*14); }
@@ -2515,7 +2571,7 @@ function killEnt(e){
 }
 
 /* --------------------------------------------------------------- effects */
-const SPARK_A = srgb("#FF6A4A"), SPARK_B = srgb("#5AE0F0");
+const SPARK_A = srgb("#FF6A4A"), SPARK_B = srgb("#5AE0F0"), GUARD3 = srgb("#8FE8FF");
 function spark(x,y,z,n,c){
   for(let i=0;i<n;i++){
     const a=Math.random()*6.283, p=Math.random()*3.14;
@@ -2556,8 +2612,11 @@ function ready(e, slot){
 }
 function fwd(e){ return {x:Math.sin(e.yaw), z:Math.cos(e.yaw)}; }
 
+const COMBO_WINDOW = 760;
+const COMBO_MUL  = [1.00, 1.12, 1.62];
+const COMBO_KNOCK= [1.00, 1.20, 2.60];
 function useAbility(e, slot){
-  const {a} = abilityOf(e, slot);
+  let {a} = abilityOf(e, slot);
   if(!ready(e, slot)) return false;
   e.cds[slot] = now() + a.cd;
   e.nrg -= (a.cost||0);
@@ -2565,6 +2624,16 @@ function useAbility(e, slot){
   const f = fwd(e);
   const o = {knock:a.knock, bleed:a.bleed, burn:a.burn, weaken:a.weaken, mark:a.mark,
              stun:a.stun, drain:a.drain, pierce:a.pierce};
+  /* three light strikes run together; the third one lands properly */
+  let mul = a.mul, step = 0;
+  if(slot === "light"){
+    step = (now() - (e.comboT||0) < COMBO_WINDOW) ? ((e.comboStep||0)+1) % 3 : 0;
+    e.comboStep = step; e.comboT = now();
+    mul = a.mul * COMBO_MUL[step];
+    if(o.knock) o.knock *= COMBO_KNOCK[step];
+    if(step === 2){ o.knock = (o.knock||120)*1.2; e.cds.light = now() + a.cd*1.6; }
+  }
+  a = Object.assign({}, a, {mul});
 
   switch(a.kind){
     case "swipe": {
@@ -2685,6 +2754,7 @@ const G = {
   orbits:[], drops:[], player:null,
   camYaw:0, camPitch:0.26, camDist:6.4, shake:0,
   t:0, last:0, surge:0, combo:0, comboT:0, spawnT:0, bossEnt:null, lastCombat:-1e9,
+  freeze:0, lockTarget:null,
   paused:true, ended:false
 };
 const GRAV = 26, JUMP = 10.2;
@@ -2805,7 +2875,12 @@ function enemyThink(e, dt){
   for(const slot of ["ult","power","light"]){
     if(!ready(e,slot)) continue;
     if(slot!=="light" && Math.random() > skill) continue;
-    useAbility(e, slot);
+    if(slot === "light"){ useAbility(e, slot); }
+    else {
+      /* wind up first, so it can be blocked, parried or rolled */
+      e.tell = {slot, at: now() + (e.boss ? 520 : 440)};
+      e.mx = e.mz = 0;
+    }
     e.atkT = now() + (e.boss?260:460) + Math.random()*320;
     return;
   }
@@ -2815,10 +2890,20 @@ function enemyThink(e, dt){
 /* ----------------------------------------------------------------- update */
 function stepEnt(e, dts){
   let spd = e.act.spd*MPU * (1 + (e.st.s-30)/300);
+  if(e.blocking){ spd *= 0.42; e.nrg = Math.max(0, e.nrg - BLOCK_DRAIN*dts); if(e.nrg<=0) e.blocking = false; }
   if(hasFx(e,"haste")) spd *= 1.35;
   if(hasFx(e,"stun")) spd = 0;
   if(e.fly) spd *= 1.7;
 
+  if(e.tell){
+    if(hasFx(e,"stun")) e.tell = null;                 /* interrupted */
+    else if(now() >= e.tell.at){ const sl = e.tell.slot; e.tell = null; useAbility(e, sl); }
+    else { e.mx = e.mz = 0; }
+  }
+  if(e.rollT && now() < e.rollT){
+    e.vx = Math.sin(e.rollYaw)*e.rollSpeed;
+    e.vz = Math.cos(e.rollYaw)*e.rollSpeed;
+  } else if(e.rollT && now() >= e.rollT){ e.rollT = 0; e.vx *= .4; e.vz *= .4; }
   if(e.dashT && now() < e.dashT){
     e.vx = Math.sin(e.dashYaw)*e.dashSpeed;
     e.vz = Math.cos(e.dashYaw)*e.dashSpeed;
@@ -2901,7 +2986,11 @@ function update(dt){
     if(p.canFly && input.fly && !p.fly){ p.fly = true; p.vy = 5; feed(p.b.name+" leaves the ground","good"); }
     else if(!input.fly && p.fly){ p.fly = false; }
     if(!p.fly && input.jump && p.grounded){ p.vy = JUMP; p.grounded = false; }
-    for(const slot of ["light","power","util","ult"]) if(input[slot]) useAbility(p, slot);
+    p.blocking = !!input.block && !hasFx(p,"stun") && p.nrg > 0 && !p.rollT;
+    if(p.blocking && !p.wasBlocking) p.blockStart = now();
+    p.wasBlocking = p.blocking;
+    if(input.dodge && !p.canFly) startRoll(p, mv);
+    if(!p.blocking) for(const slot of ["light","power","util","ult"]) if(input[slot]) useAbility(p, slot);
     if(input.surgeGo && G.surge>=100){
       G.surge = 0; setFx(p,"surge",5000);
       ["burn","bleed","weaken","mark","stun"].forEach(k=>p.fx[k]=0);
@@ -2911,6 +3000,11 @@ function update(dt){
     input.surgeGo = false;
   }
 
+  if(G.lockTarget && (G.lockTarget.dead || !p || distXZ(G.lockTarget,p) > 45)) G.lockTarget = null;
+  if(G.lockTarget && p && !p.dead){
+    const want = Math.atan2(G.lockTarget.x-p.x, G.lockTarget.z-p.z);
+    G.camYaw += angDelta(G.camYaw, want) * Math.min(1, dts*7);
+  }
   for(const e of G.ents){
     if(e.dead) continue;
     if(e.team==="foe"){
@@ -3012,6 +3106,26 @@ function update(dt){
   }
   if(G.combo && now()>G.comboT) G.combo = 0;
   G.shake *= Math.pow(0.0018, dts);
+}
+/* a roll: 340 ms of committed movement with a window you cannot be hit in */
+const ROLL_CD = 720;
+function startRoll(e, mv){
+  if(e.rollT || (e.rollCd||0) > now() || hasFx(e,"stun") || !e.grounded) return;
+  const cy = Math.cos(G.camYaw), sy = Math.sin(G.camYaw);
+  let dx, dz;
+  if(mv && (mv.x || mv.y)){ dx = mv.y*sy + mv.x*cy; dz = mv.y*cy - mv.x*sy; }
+  else { dx = -Math.sin(e.yaw); dz = -Math.cos(e.yaw); }
+  e.rollYaw = Math.atan2(dx, dz);
+  e.rollT = now() + 340; e.rollCd = now() + ROLL_CD;
+  e.rollSpeed = 12.5;
+  e.blocking = false;
+  setFx(e, "iframe", 300);
+  spark(e.x, e.y+0.4, e.z, 6, GUARD3);
+}
+function toggleLock(){
+  if(G.lockTarget){ G.lockTarget = null; feed("Lock released",""); return; }
+  const t = G.player ? nearestFoe(G.player, 45) : null;
+  if(t){ G.lockTarget = t; feed("Locked on "+t.b.name, "good"); }
 }
 function angDelta(a,b){ let d=(b-a)%6.283; if(d>3.1416) d-=6.283; if(d<-3.1416) d+=6.283; return d; }
 
@@ -3149,9 +3263,31 @@ function buildEffects(){
     const r = q.r*1.15*k;
     draw(MESH_SPH_LO, q.x,q.y,q.z, 0,0,0, r,r,r, q.c, {kind:3, emis:0.30, alpha:k*0.75});
   }
-  /* the light that comes off the ones carrying too much */
+  /* what is about to happen to you, and what you are holding off */
   for(const e of G.ents){
     if(e.dead) continue;
+    if(e.tell){
+      const k = Math.min(1, 1 - (e.tell.at - now())/500);
+      const R = 0.9 + k*1.5;
+      for(let i=0;i<12;i++){
+        const a = i/12*6.283 + now()*0.004;
+        draw(MESH_BOX, e.x+Math.sin(a)*R, e.y+0.12, e.z+Math.cos(a)*R, a,0,0,
+             0.14, 0.5, 0.14, TELL3, {kind:3, emis:1.0, alpha:0.35+0.55*k});
+      }
+    }
+    if(e.blocking){
+      const gy = e.yaw;
+      draw(MESH_BOX, e.x+Math.sin(gy)*0.55, e.y+1.05*e.size, e.z+Math.cos(gy)*0.55,
+           gy, 0, 0, 1.15*e.size, 1.15*e.size, 0.06, GUARD3,
+           {kind:3, emis:0.5, alpha:0.28});
+    }
+    if(hasFx(e,"stun")){
+      for(let i=0;i<3;i++){
+        const a = now()*0.006 + i*2.09;
+        draw(MESH_SPH_LO, e.x+Math.sin(a)*0.34, e.y+e.height*1.06, e.z+Math.cos(a)*0.34,
+             0,0,0, 0.10,0.10,0.10, GOLD3, {kind:3, emis:1.0, alpha:0.9});
+      }
+    }
     if(!SHADOW){                       /* no shadow map — a blob keeps feet on the floor */
       const gy = groundAt(e.x, e.z, e.rad);
       draw(MESH_SPH_LO, e.x, gy+0.04, e.z, 0,0,0, 1.2*e.size, 0.02, 1.2*e.size, BLACK3,
@@ -3171,7 +3307,7 @@ function buildEffects(){
            GREEN3, {kind:3, alpha:0.13, emis:0.4});
   }
 }
-const GREEN3 = srgb("#5FE39A");
+const GREEN3 = srgb("#5FE39A"), TELL3 = srgb("#FF5340");
 
 /* ------------------------------------------------------------------ passes */
 function renderScene(){
@@ -3422,24 +3558,31 @@ function drawMini(){
 }
 
 /* ------------------------------------------------------------------ input */
-const input = {up:0,down:0,left:0,right:0,light:0,power:0,util:0,ult:0,fly:0,jump:0,down2:0,surgeGo:false};
+const input = {up:0,down:0,left:0,right:0,light:0,power:0,util:0,ult:0,fly:0,jump:0,down2:0,
+               block:0,dodge:0,surgeGo:false};
 const KEYMAP = {
   KeyW:"up", ArrowUp:"up", KeyS:"down", ArrowDown:"down", KeyA:"left", ArrowLeft:"left",
   KeyD:"right", ArrowRight:"right", KeyZ:"light", KeyJ:"light", KeyX:"power", KeyK:"power",
-  KeyC:"util", KeyL:"util", KeyV:"ult", Space:"jump", ShiftLeft:"fly", ShiftRight:"fly",
+  KeyC:"util", KeyL:"util", KeyV:"ult", Space:"jump", KeyF:"block",
   ControlLeft:"down2"
 };
 addEventListener("keydown", ev=>{
   if(ev.repeat) return;
   if(KEYMAP[ev.code]){ input[KEYMAP[ev.code]] = 1; ev.preventDefault(); }
+  if(ev.code==="ShiftLeft" || ev.code==="ShiftRight"){ input.fly = 1; input.dodge = 1; ev.preventDefault(); }
   if(ev.code==="KeyQ") input.surgeGo = true;
+  if(ev.code==="KeyT"){ toggleLock(); }
   if(ev.code==="KeyB" || ev.code==="Tab"){ ev.preventDefault(); openBodyPicker(); }
   if(ev.code==="Escape"||ev.code==="KeyP"){
     if(document.pointerLockElement) document.exitPointerLock();
     SCREENS.firstChild ? closeScreen() : openScreen("pause");
   }
 });
-addEventListener("keyup", ev=>{ if(KEYMAP[ev.code]) input[KEYMAP[ev.code]] = 0; });
+addEventListener("keyup", ev=>{
+  if(KEYMAP[ev.code]) input[KEYMAP[ev.code]] = 0;
+  if(ev.code==="ShiftLeft" || ev.code==="ShiftRight"){ input.fly = 0; input.dodge = 0; }
+});
+addEventListener("contextmenu", ev=>{ if(!SCREENS.firstChild) ev.preventDefault(); });
 addEventListener("blur", ()=>{ for(const k in input) if(k!=="surgeGo") input[k]=0; });
 
 const stick = {on:false, id:-1, cx:0, cy:0, dx:0, dy:0};
@@ -3462,6 +3605,7 @@ hideStick();
 UI.addEventListener("pointerdown", ev=>{
   touchMode(ev.pointerType!=="mouse");
   if(SCREENS.firstChild) return;
+  if(ev.pointerType==="mouse" && ev.button===2){ input.block = 1; ev.preventDefault(); return; }
   if(ev.pointerType!=="mouse" && ev.clientX < VW*0.5 && !stick.on){
     stick.on = true; stick.id = ev.pointerId; stick.cx = ev.clientX; stick.cy = ev.clientY;
     showStick(ev.clientX, ev.clientY);
@@ -3489,6 +3633,7 @@ UI.addEventListener("pointermove", ev=>{
   }
 });
 const endPtr = ev=>{
+  if(ev.button===2) input.block = 0;
   if(stick.on && ev.pointerId===stick.id){ stick.on=false; stick.dx=stick.dy=0; hideStick(); }
   if(look.on && ev.pointerId===look.id) look.on = false;
 };
@@ -3519,6 +3664,12 @@ function holdBtn(id, key){
   b.addEventListener("pointerup",up); b.addEventListener("pointercancel",up);
 }
 holdBtn("btn-jump","jump");
+holdBtn("btn-block","block");
+const DODGEB = document.getElementById("btn-dodge");
+DODGEB.addEventListener("pointerdown", ev=>{ touchMode(true); input.dodge = 1;
+  setTimeout(()=>{ input.dodge = 0; }, 90); ev.preventDefault(); ev.stopPropagation(); });
+document.getElementById("btn-lock").addEventListener("pointerdown", ev=>{
+  touchMode(true); toggleLock(); ev.preventDefault(); ev.stopPropagation(); });
 const FLYB = document.getElementById("btn-fly");
 FLYB.addEventListener("pointerdown", ev=>{ touchMode(true); input.fly = input.fly?0:1;
   FLYB.dataset.on = input.fly?"1":"0"; ev.preventDefault(); ev.stopPropagation(); });
@@ -3608,6 +3759,10 @@ function updateHud(){
   });
   FLYB.style.display = p.canFly ? "" : "none";
   FLYB.dataset.on = p.fly ? "1":"0";
+  DODGEB.style.display = p.canFly ? "none" : "";
+  DODGEB.dataset.on = (p.rollCd||0) > G.t ? "0" : "1";
+  el("btn-block").dataset.on = p.blocking ? "1":"0";
+  el("btn-lock").dataset.on = G.lockTarget ? "1":"0";
   el("btn-surge").dataset.on = G.surge>=100 ? "1":"0";
   const lock = el("tag-combat");
   if(inCombat()){ lock.style.display = ""; lock.textContent = "IN COMBAT · "+combatLeft()+"s"; }
@@ -3750,7 +3905,10 @@ function controlsHtml(){
   return `<div class="grid grid--wide" style="margin-top:8px">
     <div><h3>Move</h3><p class="note"><b>WASD</b> or the arrows, relative to the camera. On a phone, touch anywhere on the left half of the screen — the stick appears under your thumb.</p></div>
     <div><h3>Look</h3><p class="note">Drag anywhere on the right half, or click once on desktop to lock the mouse. Scroll to pull the camera in or out.</p></div>
-    <div><h3>Fight</h3><p class="note"><b>Z</b> strike · <b>X</b> power · <b>C</b> guard or heal · <b>V</b> ultimate. Four round buttons on a phone. Hold to keep swinging.</p></div>
+    <div><h3>Fight</h3><p class="note"><b>Z</b> strike · <b>X</b> power · <b>C</b> ability · <b>V</b> ultimate. Four round buttons on a phone. Three strikes in a row run together and the third one lands properly.</p></div>
+    <div><h3>Guard and parry</h3><p class="note">Hold <b>F</b> or the right mouse button (GUARD on a phone) to block what you are facing — most of the damage stops, and it drains energy. A hit that arrives in the first quarter-second of a guard is a <b>parry</b>: it staggers whoever threw it and hands it back.</p></div>
+    <div><h3>Roll</h3><p class="note"><b>Shift</b> (ROLL on a phone) if the body you are wearing cannot fly. Three hundred milliseconds of nothing touching you. Enemies wind up before anything heavy — that flare around their feet is your cue.</p></div>
+    <div><h3>Lock on</h3><p class="note"><b>T</b> or the LOCK button keeps the camera on the nearest enemy.</p></div>
     <div><h3>Jump and fly</h3><p class="note"><b>Space</b> jumps — you can land on the rooftops. <b>Shift</b> (or the FLY button) leaves the ground entirely, if the body you are wearing can. Hold Space to climb, Ctrl to drop.</p></div>
     <div><h3>Change body</h3><p class="note"><b>1 2 3</b> or tap a portrait. Instant, mid-fight, as often as you like. Health is tracked per body.</p></div>
     <div><h3>Surge</h3><p class="note"><b>Q</b> when the gold bar fills. Clears everything hurting you and hits 60% harder for five seconds.</p></div>
@@ -4162,9 +4320,11 @@ function syncHostLive(){
 
 function frame(ts){
   requestAnimationFrame(frame);
-  const dt = Math.min(50, ts - (G.last||ts));
+  let dt = Math.min(50, ts - (G.last||ts));
   G.last = ts;
   if(!G.world) return;
+  /* hit-stop: a heavy landing freezes the world for a breath */
+  if(G.freeze > 0){ G.freeze -= dt; dt *= 0.08; }
   if(!G.paused) update(dt);
   renderScene();
   updateHud();
