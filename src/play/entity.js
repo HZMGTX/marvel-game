@@ -3,6 +3,7 @@
    Part of Multiverse Vessel. Loaded in order from index.html. */
 
 /* --------------------------------------------------------------- entities */
+let ENT_UID = 0;
 function makeEnt(beingId, x, z, team, o){
   o = o||{};
   const b = BY_ID[beingId];
@@ -16,6 +17,7 @@ function makeEnt(beingId, x, z, team, o){
              * (b.tags.includes("beast")?0.94:1);
   const pal = palette(b);
   return {
+    uid: ++ENT_UID,
     b, id:beingId, team, act:ACT[b.arch], pal, size,
     x, y:0, z, vx:0, vy:0, vz:0, yaw:Math.random()*6.283,
     rad:0.36*size, height:1.80*size*(palette(b).legs||1)*0.55 + 1.80*size*0.45, grounded:true,

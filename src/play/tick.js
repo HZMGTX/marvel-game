@@ -110,9 +110,11 @@ function update(dt){
     ob.pz = ob.owner.z + Math.cos(ob.ang)*ob.rad;
     for(const t of G.ents){
       if(t.dead||t.team===ob.owner.team) continue;
-      if((ob.cool[t.b.id]||0) > now()) continue;
-      if(Math.hypot(t.x-ob.px, (t.y+t.height*.5)-ob.py, t.z-ob.pz) < t.rad+0.8){
-        ob.cool[t.b.id] = now()+420; dealDamage(ob.owner,t,ob.mul,{});
+      /* keyed per body, not per character — two of the same enemy used to
+         share one cooldown, so only one of them could ever be cut */
+      if((ob.cool[t.uid]||0) > now()) continue;
+      if(Math.hypot(t.x-ob.px, (t.y+t.height*.5)-ob.py, t.z-ob.pz) < t.rad+1.0){
+        ob.cool[t.uid] = now()+420; dealDamage(ob.owner,t,ob.mul,{});
       }
     }
   }

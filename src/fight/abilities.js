@@ -83,8 +83,11 @@ function useAbility(e, slot){
     case "blitz":  e.blitz  = {left:a.hits, mul:a.mul, opts:o, next:now()}; break;
     case "frenzy": e.frenzy = {left:a.hits, mul:a.mul, R:a.radius*U_RADIUS, opts:o, next:now()}; break;
     case "orbit":
+      /* these sweep the ground you are standing on, not a circle five metres
+         out — at the old radius they orbited past everything you could fight */
       for(let i=0;i<a.count;i++)
-        G.orbits.push({owner:e, ang:i*(6.283/a.count), rad:a.radius*U_RADIUS*1.5, mul:a.mul, t:0, life:a.dur, cool:{}});
+        G.orbits.push({owner:e, ang:i*(6.283/a.count), rad:Math.max(1.5, a.radius*U_RADIUS*0.55),
+                       mul:a.mul, t:0, life:a.dur, cool:{}});
       break;
     case "buff": {
       if(a.cleanse) ["burn","bleed","weaken","mark","stun"].forEach(k=>e.fx[k]=0);

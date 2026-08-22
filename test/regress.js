@@ -149,6 +149,43 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
       return Object.values(o.dayLighting).every(Boolean);
     })();
 
+    // every ability of every archetype fires, and lands on something
+    (()=>{
+      const slots = ["light","power","util","ult"];
+      const threw = [], inert = [];
+      const kinds = {};
+      const hostWas = S.host;
+      for(const archId of ARCH_IDS){
+        const being = BEINGS.find(b2=>b2.arch===archId);
+        if(!being){ threw.push(archId+": nobody has this archetype"); continue; }
+        if(!S.unlocked.includes(being.id)) S.unlocked.push(being.id);
+        G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9;
+        becomeHost(being.id);
+        const P = G.player;
+        if(!P || P.b.arch !== archId){ threw.push(archId+": could not be become"); continue; }
+        for(const slot of slots){
+          const {a} = abilityOf(P, slot);
+          kinds[a.kind] = (kinds[a.kind]||0) + 1;
+          const t = makeEnt(BEINGS[0].id, P.x + 1.4, P.z, "foe", {});
+          t.maxHp = 1e7; t.hp = t.maxHp; G.ents.push(t);
+          P.yaw = Math.atan2(t.x-P.x, t.z-P.z);
+          P.cds = {}; P.nrg = P.maxNrg; P.fx = {};
+          let ok = true;
+          try{ useAbility(P, slot); for(let i=0;i<25;i++) update(33); }
+          catch(e){ ok = false; threw.push(archId+"/"+slot+" ("+a.kind+"): "+e.message); }
+          /* a util slot is a self-buff; everything else has to touch somebody */
+          if(ok && slot !== "util" && t.hp >= t.maxHp) inert.push(archId+"/"+slot+" ("+a.kind+")");
+          G.ents = G.ents.filter(e2=>e2!==t);
+        }
+      }
+      G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9;
+      if(hostWas) becomeHost(hostWas);
+      o.abilThrew = threw;
+      o.abilInert = inert;
+      o.abilCount = Object.values(kinds).reduce((x,y)=>x+y, 0);
+      o.abilKinds = Object.keys(kinds).length;
+    })();
+
     // the air: hovering is not a free win any more
     (()=>{
       const clear = ()=>{ G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9; G.projs.length = 0; };
@@ -544,6 +581,10 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   ok("city populated", r.city.cars>0 && r.city.civs>0 && r.city.props>0, JSON.stringify(r.city));
   ok("civilians replenish", r.civsReturn);
   ok("a day that is actually a day", r.dayNight, JSON.stringify(r.dayLighting));
+  ok("every ability of every archetype fires",
+     r.abilThrew.length===0 && r.abilCount===64 && r.abilKinds>=11,
+     r.abilThrew.slice(0,3).join(" | ") || (r.abilCount+" across "+r.abilKinds+" kinds"));
+  ok("and every attack lands on somebody", r.abilInert.length===0, r.abilInert.join(", "));
   ok("shots aim where the target is", r.airShotAims);
   ok("a grounded enemy throws at a high hover", r.airThrows);
   ok("and jumps at a low one", r.airLeaps);
