@@ -2480,7 +2480,7 @@ function makeEnt(beingId, x, z, team, o){
   return {
     b, id:beingId, team, act:ACT[b.arch], pal, size,
     x, y:0, z, vx:0, vy:0, vz:0, yaw:Math.random()*6.283,
-    rad:0.36*size, height:1.80*size, grounded:true,
+    rad:0.36*size, height:1.80*size*(palette(b).legs||1)*0.55 + 1.80*size*0.45, grounded:true,
     st:u.st, hp:u.maxHp, maxHp:u.maxHp, nrg:u.st.n, maxNrg:u.st.n,
     gear:u.gear, pot:u.pot, ai:u.ai,
     cds:{}, fx:{}, dead:false, hitT:-1e9, swingT:-1e9, moving:false, animT:Math.random()*100,
@@ -2527,6 +2527,14 @@ function palette(b){
     horns: /demon|deviant/.test(tags) || p(25)>0.975,
     winged: /^angel|archangel|^falcon|^vulture|^firelord|^stardust|^air-walker/i.test(b.name),
     bulk: 0.92 + (b.arch==="TITAN"?0.30:0) + (b.arch==="SPEED"||b.arch==="ROGUE"?-0.06:0) + p(27)*0.12,
+    /* proportions, so six hundred people are not one mannequin at six
+       hundred sizes. All within a plausible human range. */
+    legs:   1.0 + (p(31)-0.5)*0.16 + (b.arch==="SPEED"?0.07:0) + (b.arch==="TITAN"?-0.05:0),
+    torso:  1.0 + (p(37)-0.5)*0.12 + (b.arch==="TITAN"?0.06:0),
+    shoulder:1.0 + (p(41)-0.5)*0.18 + (b.arch==="TITAN"?0.16:0) + (b.arch==="SPEED"?-0.08:0),
+    headSz: 1.0 + (p(43)-0.5)*0.14 + (b.tags.includes("beast")?0.08:0),
+    limb:   1.0 + (p(47)-0.5)*0.16 + (b.arch==="TITAN"?0.14:0) + (b.arch==="SPEED"?-0.09:0),
+    arms:   1.0 + (p(53)-0.5)*0.12 + (b.tags.includes("beast")?0.10:0),
     glow: b.tier>=8 || b.arch==="COSMIC" || b.arch==="ENTITY",
     rough: machine ? 0.26 : /symbiote/.test(tags) ? 0.22 : 0.74,
     metal: armoured ? 0.85 : /symbiote/.test(tags) ? 0.25 : 0.04
@@ -2605,11 +2613,14 @@ function drawChar(e, camDist){
   }
 
   /* the frame ----------------------------------------------------------- */
+  const LG = pal.legs || 1, TO = pal.torso || 1, SH = pal.shoulder || 1;
+  const hipY = 0.92*LG, chestY = hipY + 0.48*TO;
   const H = {                                     /* joint heights, size 1 */
-    ankle:0.09, knee:0.50, hip:0.92, waist:1.05, chest:1.40, neck:1.46, head:1.655
+    ankle:0.09*LG, knee:0.50*LG, hip:hipY, waist:hipY + 0.13*TO,
+    chest:chestY, neck:chestY + 0.06, head:chestY + 0.255*(pal.headSz||1)
   };
   if(plated) pal = Object.assign({}, pal, {bulk: pal.bulk*1.12});
-  const hipX = 0.085*s*pal.bulk, shX = 0.19*s*pal.bulk;
+  const hipX = 0.085*s*pal.bulk, shX = 0.19*s*pal.bulk*SH;
   const yb = bob*s;
 
   const pelvis = L2W(e, 0, (H.hip+yb)*s, 0, bodyPitch, [0,0,0]);
@@ -2620,7 +2631,7 @@ function drawChar(e, camDist){
   /* torso: waist to chest, flaring outward */
   bone(pelvis[0],pelvis[1],pelvis[2], chest[0],chest[1],chest[2],
        0.155*s*pal.bulk, c1, {rough:M1.rough, metal:M1.metal, emis}, MESH_FLARE);
-  joint(chest[0],chest[1],chest[2], 0.175*s*pal.bulk, c1, M1);
+  joint(chest[0],chest[1],chest[2], 0.175*s*pal.bulk*SH, c1, M1);
   joint(pelvis[0],pelvis[1],pelvis[2], 0.145*s*pal.bulk, c2, M1);
 
   if(!far){
@@ -2644,9 +2655,9 @@ function drawChar(e, camDist){
     const a2 = ang - bend;
     const ax2 = kx, ay2 = ky - Math.cos(a2)*shinLen, az2 = kz + Math.sin(a2)*shinLen;
     const ankP = L2W(e, ax2, ay2, az2, bodyPitch, [0,0,0]);
-    bone(hipP[0],hipP[1],hipP[2], kneeP[0],kneeP[1],kneeP[2], 0.082*s*pal.bulk, c1, M1);
+    bone(hipP[0],hipP[1],hipP[2], kneeP[0],kneeP[1],kneeP[2], 0.082*s*pal.bulk*(pal.limb||1), c1, M1);
     if(!far) joint(kneeP[0],kneeP[1],kneeP[2], 0.072*s*pal.bulk, c1, M1);
-    bone(kneeP[0],kneeP[1],kneeP[2], ankP[0],ankP[1],ankP[2], 0.070*s*pal.bulk, c2, M2);
+    bone(kneeP[0],kneeP[1],kneeP[2], ankP[0],ankP[1],ankP[2], 0.070*s*pal.bulk*(pal.limb||1), c2, M2);
     if(!far){
       const fz = az2 + Math.sin(a2)*0.10*s + 0.06*s;
       const foot = L2W(e, ax2, ay2 - 0.03*s, fz, bodyPitch, [0,0,0]);
@@ -2660,16 +2671,17 @@ function drawChar(e, camDist){
     const ang = side<0 ? armLA : armRA, bend = side<0 ? elbL : elbR;
     const sx = side*shX;
     const shP = L2W(e, sx, (H.chest+yb)*s, 0, bodyPitch, [0,0,0]);
-    const upLen = 0.30*s, foreLen = 0.28*s;
+    const AR = pal.arms || 1;
+    const upLen = 0.30*s*AR, foreLen = 0.28*s*AR;
     const ex = sx + side*0.02*s, ey = (H.chest+yb)*s - Math.cos(ang)*upLen, ez = Math.sin(ang)*upLen;
     const elP = L2W(e, ex, ey, ez, bodyPitch, [0,0,0]);
     const a2 = ang + bend;
     const wx = ex, wy = ey - Math.cos(a2)*foreLen, wz = ez + Math.sin(a2)*foreLen;
     const wrP = L2W(e, wx, wy, wz, bodyPitch, [0,0,0]);
     if(!far) joint(shP[0],shP[1],shP[2], 0.085*s*pal.bulk, c1, M1);
-    bone(shP[0],shP[1],shP[2], elP[0],elP[1],elP[2], 0.058*s*pal.bulk, c1, M1);
+    bone(shP[0],shP[1],shP[2], elP[0],elP[1],elP[2], 0.058*s*pal.bulk*(pal.limb||1), c1, M1);
     if(!far) joint(elP[0],elP[1],elP[2], 0.050*s*pal.bulk, c1, M1);
-    bone(elP[0],elP[1],elP[2], wrP[0],wrP[1],wrP[2], 0.050*s*pal.bulk, c2, M2);
+    bone(elP[0],elP[1],elP[2], wrP[0],wrP[1],wrP[2], 0.050*s*pal.bulk*(pal.limb||1), c2, M2);
     if(!far) joint(wrP[0],wrP[1],wrP[2], 0.055*s*pal.bulk, c2, M2);
     if(side > 0){ rWrist = wrP.slice(); rElbow = elP.slice(); }
   }
@@ -2678,8 +2690,9 @@ function drawChar(e, camDist){
 
   /* neck and head */
   bone(chest[0],chest[1],chest[2], neck[0],neck[1],neck[2], 0.048*s, headCol, MH, MESH_TUBE);
+  const HS = pal.headSz || 1;
   draw(MESH_SPH, headP[0],headP[1],headP[2], e.yaw, bodyPitch, 0,
-       0.205*s, 0.245*s, 0.215*s, headCol, MH);
+       0.205*s*HS, 0.245*s*HS, 0.215*s*HS, headCol, MH);
   if(!far){
     /* a visor, or eyes, or a hood */
     const eye = L2W(e, 0, (H.head+yb+0.012)*s, 0.095*s, bodyPitch, [0,0,0]);
