@@ -3021,7 +3021,7 @@ const COMBO_KNOCK= [1.00, 1.20, 2.60];
 function useAbility(e, slot){
   let {a} = abilityOf(e, slot);
   if(!ready(e, slot)) return false;
-  e.cds[slot] = now() + a.cd;
+  e.cds[slot] = now() + a.cd / (e.enrage || 1);
   e.nrg -= (a.cost||0);
   e.swingT = now();
   const f = fwd(e);
@@ -3201,6 +3201,7 @@ function spawnBoss(){
   const p = pickSpawn(G.player, 18, 34);
   const e = makeEnt(b.id, p.x, p.z, "foe", {scale:1.16 + sectorIndex(G.sector)*0.012, boss:true});
   e.maxHp = Math.round(e.maxHp*2.2); e.hp = e.maxHp;
+  e.phase = 0; e.enrage = 1;
   G.ents.push(e); G.bossEnt = e;
   feed(b.name.toUpperCase()+" HAS COME OUT TO MEET YOU","big");
   G.shake += 1;
@@ -3256,6 +3257,46 @@ function inCombat(){ return (G.t - G.lastCombat) < COMBAT_HOLD; }
 function combatLeft(){ return Math.max(0, Math.ceil((COMBAT_HOLD - (G.t - G.lastCombat))/1000)); }
 
 /* ------------------------------------------------------------------ enemy */
+/* A boss does not just have more health — it gets worse twice on the way
+   down, and both times it clears the floor first. */
+const BOSS_PHASES = [0.62, 0.30];
+const BOSS_LINES = [
+  n => n + " stops holding back.",
+  n => n + " has decided this ends now."
+];
+function bossPhaseCheck(e){
+  if(!e.boss || e.dead) return;
+  const frac = e.hp / e.maxHp;
+  const want = BOSS_PHASES.filter(t => frac <= t).length;
+  if(want <= (e.phase||0)) return;
+  e.phase = want;
+  e.enrage = 1 + want*0.24;
+  e.fx = {};
+  setFx(e, "iframe", 1100);
+  /* the room gets cleared */
+  const R = 9 + want*3;
+  for(const t of G.ents){
+    if(t.dead || t.team === "foe" || distXZ(t,e) > R) continue;
+    const a = Math.atan2(t.x-e.x, t.z-e.z);
+    t.vx += Math.sin(a)*16; t.vz += Math.cos(a)*16; t.vy += 5;
+    if(t.team === "you") dealDamage(e, t, 0.55, {unblockable:false});
+  }
+  shock(e.x, e.y+0.4, e.z, R, e.pal.c3, 900);
+  burst(e.x, e.y+1, e.z, 40, e.pal.c3);
+  G.shake += 1.2; G.freeze = Math.max(G.freeze, 130);
+  SFX.slam(e.x, e.z, R); SFX.tell(e.x, e.z);
+  feed(BOSS_LINES[want-1](e.b.name.toUpperCase()), "big");
+  /* and it does not come alone */
+  const pool = sectorBeings(G.sector).filter(b=>b.id!==e.b.id).sort((a,b)=>a.tier-b.tier);
+  for(let i=0;i<2 && pool.length;i++){
+    const b = pool[Math.min(pool.length-1, Math.floor(pool.length*0.55))];
+    const s = pickSpawn(e, 6, 16);
+    const add = makeEnt(b.id, s.x, s.z, "foe", {scale:1.05});
+    add.missionTag = "add";
+    G.ents.push(add);
+  }
+}
+
 const MAX_ATTACKERS = 3;
 function attackerCount(){ let n=0; for(const e of G.ents) if(!e.dead && e.team==="foe" && e.engaged) n++; return n; }
 function enemyThink(e, dt){
@@ -3309,6 +3350,7 @@ function stepEnt(e, dts){
   if(hasFx(e,"haste")) spd *= 1.35;
   if(hasFx(e,"stun")) spd = 0;
   if(e.fly) spd *= 1.7;
+  if(e.enrage) spd *= e.enrage;
 
   if(e.tell){
     if(hasFx(e,"stun")) e.tell = null;                 /* interrupted */
@@ -3364,6 +3406,7 @@ function stepEnt(e, dts){
   if(hasFx(e,"regen") && G.t % 420 < dts*1000) e.hp = Math.min(e.maxHp, e.hp+e.maxHp*0.014);
   if(e.ai && e.ai.fx==="repair" && G.t % 900 < dts*1000) e.hp = Math.min(e.maxHp, e.hp+e.maxHp*0.012);
   if(e.team==="you" && now()-(e.lastHurt||0) > 4200 && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp*0.05*dts*(1 + vesselLevel("regen")*0.45));
+  if(e.boss) bossPhaseCheck(e);
   if(e.hp<=0 && !e.dead){ killEnt(e); return; }
 
   /* multi-hit specials */
@@ -4236,6 +4279,16 @@ function buildEffects(){
            {kind:3, alpha:0.34*Math.max(0.15, 1-(e.y-gy)/14), emis:0});
     }
     const surge = hasFx(e,"surge");
+    if(e.boss){
+      const n2 = 6 + (e.phase||0)*4;
+      const col = (e.phase||0) >= 2 ? TELL3 : (e.phase ? GOLD3 : e.pal.c3);
+      for(let i=0;i<n2;i++){
+        const a = G.t*(0.0018 + (e.phase||0)*0.0008) + i*(6.283/n2);
+        const rr = (0.85 + Math.sin(G.t*0.003+i)*0.10)*e.size;
+        draw(MESH_SPH_LO, e.x+Math.sin(a)*rr, e.y+(0.4+(i%4)*0.45)*e.size, e.z+Math.cos(a)*rr,
+             0,0,0, 0.15,0.15,0.15, col, {kind:3, emis:1.1, alpha:0.85});
+      }
+    }
     if(!e.pal.glow && !surge) continue;
     const n = surge ? 7 : 4;
     for(let i=0;i<n;i++){
@@ -4447,6 +4500,10 @@ function drawOverlay(){
     UX.fillStyle = "rgba(0,0,0,.6)"; UX.fillRect(sc.x-w/2-1, sc.y-1, w+2, 7);
     UX.fillStyle = e.boss ? "#F7BC46" : "#FF5340";
     UX.fillRect(sc.x-w/2, sc.y, w*Math.max(0,e.hp/e.maxHp), 5);
+    if(e.boss && e.phase){
+      UX.fillStyle = "#F7BC46";
+      for(let i=0;i<e.phase;i++) UX.fillRect(sc.x + w/2 + 4 + i*7, sc.y, 5, 5);
+    }
     if(e.boss || near < 22){
       UX.font = (e.boss?'700 15px':'700 11px')+' "Chivo Mono",ui-monospace,monospace';
       UX.textAlign="center"; UX.lineWidth=3.5; UX.strokeStyle="rgba(0,0,0,.9)";
