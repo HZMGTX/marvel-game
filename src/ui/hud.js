@@ -21,7 +21,9 @@ function becomeHost(id){
     return false;
   }
   const old = G.player;
-  S.host = id; save();
+  S.host = id;
+  S.worn = (S.worn || 0) + 1;               /* the spark keeps count */
+  save();
   if(old){
     shock(old.x, old.y+0.9, old.z, 3.2, GOLD3, 520);
     burst(old.x, old.y+0.9, old.z, 26, old.pal.c3);

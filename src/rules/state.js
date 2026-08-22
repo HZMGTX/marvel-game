@@ -10,7 +10,8 @@ const DEFAULT_STATE = {
   host:null, loadout:{}, levels:{}, xp:{}, essence:0,
   missionsDone:0, missionRound:0, missionSeen:{}, story:{},
   abil:{}, vessel:{}, gearLv:{}, mastery:{}, hints:{},
-  defeated:{}, cleared:{}, kills:{}, sector:"hk", wins:0, gearKills:{}, tutorial:0
+  defeated:{}, cleared:{}, kills:{}, sector:"hk", wins:0, gearKills:{}, tutorial:0,
+  worn:0, spent:0, letGo:0, heldOn:0
 };
 let S = clone(DEFAULT_STATE);
 function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }

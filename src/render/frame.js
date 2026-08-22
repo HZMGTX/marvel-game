@@ -68,7 +68,9 @@ function buildFrame(){
     if(e.dead){
       const k = 1 - (now()-e.deadT)/1100;
       e.yaw += 0.0; drawChar(e, d + (1-k)*60);
-    } else drawChar(e, d);
+    }
+    else if(d > 52 && e !== G.player && !e.boss) drawCharFar(e);
+    else drawChar(e, d);
   }
 
   /* gear on the ground */

@@ -42,8 +42,14 @@ function buildEffects(){
     draw(MESH_SPH_LO, q.x,q.y,q.z, 0,0,0, r,r,r, q.c, {kind:3, emis:0.30, alpha:k*0.75});
   }
   /* what is about to happen to you, and what you are holding off */
+  const eye = G.player || {x:EYE[0], z:EYE[2]};
   for(const e of G.ents){
     if(e.dead) continue;
+    /* trimmings are for things you can see: a wind-up or a boss always draws,
+       everything else thins out and then stops with distance */
+    const far = Math.hypot(e.x - eye.x, e.z - eye.z);
+    if(far > 70 && !e.boss && !e.tell) continue;
+    const lod = far > 30 ? 1 : 0;
     if(e.tell){
       const k = Math.min(1, 1 - (e.tell.at - now())/500);
       const R = 0.9 + k*1.5;
@@ -65,7 +71,7 @@ function buildEffects(){
     if(e.elite){                       /* the mark of the role, always on */
       const col = ELITE3[e.elite];
       const veiled = now() < (e.veil||0);
-      for(let i=0;i<3;i++){
+      for(let i=0;i<(lod?1:3);i++){
         const a = now()*0.0026 + i*2.094;
         const rr = (0.70 + Math.sin(now()*0.0034+i)*0.08)*e.size;
         draw(MESH_SPH_LO, e.x+Math.sin(a)*rr, e.y+e.height*0.94, e.z+Math.cos(a)*rr,
@@ -87,7 +93,7 @@ function buildEffects(){
              0,0,0, 0.10,0.10,0.10, GOLD3, {kind:3, emis:1.0, alpha:0.9});
       }
     }
-    if(e.fly){                         /* the air you are tearing through */
+    if(e.fly && !lod){                 /* the air you are tearing through */
       const sp = Math.hypot(e.vx, e.vz, e.vy);
       if(sp > 14){
         const n3 = Math.min(8, 3 + Math.round((sp - 14)/4));
@@ -106,7 +112,7 @@ function buildEffects(){
     }
     const surge = hasFx(e,"surge");
     if(e.boss){
-      const n2 = 6 + (e.phase||0)*4;
+      const n2 = (6 + (e.phase||0)*4) >> (lod ? 1 : 0);
       const col = (e.phase||0) >= 2 ? TELL3 : (e.phase ? GOLD3 : e.pal.c3);
       for(let i=0;i<n2;i++){
         const a = G.t*(0.0018 + (e.phase||0)*0.0008) + i*(6.283/n2);
@@ -115,7 +121,7 @@ function buildEffects(){
              0,0,0, 0.15,0.15,0.15, col, {kind:3, emis:1.1, alpha:0.85});
       }
     }
-    if(!e.pal.glow && !surge) continue;
+    if((!e.pal.glow && !surge) || (lod && !surge)) continue;
     const n = surge ? 7 : 4;
     for(let i=0;i<n;i++){
       const a = G.t*0.0022 + i*(6.283/n);

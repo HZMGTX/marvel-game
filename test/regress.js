@@ -407,6 +407,56 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
       zero(); G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9;
     })();
 
+    // the story reaches every sector, and the last one ends it
+    (()=>{
+      o.storySilent = SECTORS.filter(s2=>!STORY[s2.id]).map(s2=>s2.id);
+      const was = G.sector;
+      G.sector = "lat"; const named = bossMeetLine({name:"Doctor Doom"});
+      G.sector = "qns"; const plain = bossMeetLine({name:"Somebody"});
+      G.sector = was;
+      o.bossLines = /Doom/.test(named) && named !== plain && plain.length > 8;
+
+      S.worn = 0; S.spent = 0;
+      G.ents = G.ents.filter(e2=>e2.team==="you"); G.lastCombat = -1e9;
+      const other = S.unlocked.find(x=>x !== S.host);
+      const tookOne = becomeHost(other) && S.worn === 1;
+      G.player.hp = 1; killEnt(G.player);
+      o.tally = tookOne && S.spent === 1;
+      G.player.dead = false; G.player.hp = G.player.maxHp; G.player.fx = {}; G.ended = false;
+
+      /* the argument at the top, and both ways out of it */
+      const html = endingHtml();
+      const hasBoth = /data-act="hold-on"/.test(html) && /data-act="let-go"/.test(html);
+      S.worn = 7; S.spent = 3;
+      o.endingReads = hasBoth && /7 bodies/.test(endingHtml()) && /3 of them out/.test(endingHtml());
+      S.cleared = {hk:true, qns:true};
+      const heldBefore = S.heldOn || 0;
+      S.heldOn = heldBefore + 1; S.cleared = {};      /* what hold-on does */
+      o.holdOnReopens = Object.keys(S.cleared).length === 0 && S.heldOn === heldBefore + 1;
+      o.letGoSummary = /data-act="begin-again"/.test(letGoHtml());
+      S.worn = 0; S.spent = 0; S.heldOn = heldBefore;
+    })();
+
+    // distance costs less to draw than it used to
+    (()=>{
+      const melee = sectorBeings(G.sector)[0].id;
+      G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9;
+      const e = makeEnt(melee, G.player.x + 3, G.player.z, "foe", {});
+      G.ents.push(e);
+      const cost = fn => { resetQueue(); fn(); return Q_OPAQUE.length + Q_ALPHA.length; };
+      const full = cost(()=>drawChar(e, 8));
+      const imp  = cost(()=>drawCharFar(e));
+      resetQueue();
+      /* and the switch happens out there, never on you */
+      e.x = G.player.x + 200;
+      const before = (()=>{ resetQueue(); buildFrame(); return Q_OPAQUE.length + Q_ALPHA.length; })();
+      e.x = G.player.x + 3;
+      const after = (()=>{ resetQueue(); buildFrame(); return Q_OPAQUE.length + Q_ALPHA.length; })();
+      o.charLod = full > imp*2 && imp > 2 && after > before;
+      G.ents = G.ents.filter(e2=>e2.team==="you"); G.lastCombat = -1e9;
+      resetQueue();
+    })();
+
     // a press is an edge as well as a level
     (()=>{
       clearTaps();
@@ -480,6 +530,11 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   ok("a small hop does not", r.softLanding);
   ok("the air readout reads", r.flyHud && r.flyHudHides);
   ok("audio ready", r.sound);
+  ok("every sector has something to say", r.storySilent.length===0, r.storySilent.join(","));
+  ok("bosses greet you by name where written", r.bossLines);
+  ok("the spark counts what it has worn out", r.tally);
+  ok("the last sector ends the story", r.endingReads && r.holdOnReopens && r.letGoSummary);
+  ok("distant people cost a fraction to draw", r.charLod);
   ok("a press is an edge as well as a level", r.tapLatch);
   ok("save round-trips", r.save);
 

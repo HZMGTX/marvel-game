@@ -111,6 +111,20 @@ buildings that stand on pillars so you can walk in under them. The sun goes roun
 eight-minute cycle — dawn, noon, dusk, night with the windows lit — and it rains about
 a third of the time.
 
+## What it costs
+
+The spark does not know what it is. Every one of the thirty sectors has a line about what
+wearing people is doing to the people, given to you when you clear it, and the ten that
+matter most have a boss who says something when they come out — Doom addresses the spark
+rather than the mouth; the TVA would like to know why your file is one line long.
+
+It keeps count. How many bodies you have taken, and how many you wore out. Clear **Above All
+Others**, the last sector, and instead of another "sector clear" screen you get the argument:
+the tally, and a choice. **Let go** — the spark goes out, somebody wakes up on the floor
+missing an afternoon, and that is the end of it. **Hold on** — you keep everything you have
+and the thirty go back the way you found them. There is always another one, and none of them
+can tell.
+
 ## The mind you are carrying
 
 An artificial mind installs into the vessel, not the body, so it follows you through every
@@ -225,7 +239,7 @@ npm i playwright
 node test/regress.js
 ```
 
-It exits non-zero on any failure. Fifty-nine checks, currently all passing — the last four
+It exits non-zero on any failure. Sixty-four checks, currently all passing — the last four
 of them in a real 390×844 touch context, checking that the phone build comes up, that nothing
 on its HUD collides or runs off the edge, and that a quick tap fires an ability. Point it at a
 different build with `GAME_URL` — the bundle in `dist/` has to pass exactly the same set.

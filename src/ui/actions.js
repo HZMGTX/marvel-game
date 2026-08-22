@@ -32,6 +32,27 @@ SCREENS.addEventListener("click", ev=>{
     return;
   }
   if(d.act==="revive"){ reviveHost(); closeScreen(); return; }
+  if(d.act==="hold-on"){
+    S.heldOn = (S.heldOn||0) + 1;
+    S.cleared = {};                       /* the thirty go back the way you found them */
+    save();
+    menuTab = "sectors"; openScreen("pause");
+    feed("You hold on. None of them can tell.","big");
+    return;
+  }
+  if(d.act==="let-go"){
+    S.letGo = (S.letGo||0) + 1; save();
+    openScreen("let-go");
+    return;
+  }
+  if(d.act==="begin-again"){
+    const kept = {letGo:S.letGo, heldOn:S.heldOn};
+    S = Object.assign(clone(DEFAULT_STATE), kept);
+    try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+    save();
+    G.world = null; SCREENS.innerHTML = ""; boot();
+    return;
+  }
   if(d.act==="more"){ cx.cap += 200; openScreen("pause"); return; }
   if(d.act==="more-bodies"){ bx.cap += 200; openScreen("pause"); return; }
   if(d.act==="wipe"){

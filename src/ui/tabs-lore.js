@@ -96,6 +96,49 @@ function clearedHtml(){
     </div>
   </div>`;
 }
+/* The argument at the top. Everything below Above All Others has been about
+   what you can do; this is the only screen that asks whether you should. */
+function endingHtml(){
+  const t = vesselTally();
+  return `<div class="stack" style="max-width:660px;margin:5vh auto 0">
+    <div class="eyebrow">Above All Others</div>
+    <h2 class="t">Nothing is holding you up</h2>
+    <p class="note" style="font-style:italic;color:var(--ink);max-width:58ch">
+      ${esc(STORY.above)}</p>
+    <p class="note" style="max-width:58ch">You have worn ${t.worn} ${t.worn===1?"body":"bodies"} and
+      worn ${t.spent} of them out. ${t.hosts} people are yours to become, across ${t.sectors}
+      ${t.sectors===1?"sector":"sectors"}. Not one of them was asked.</p>
+    <p class="note" style="max-width:58ch">You could stop. The spark would go out and the last
+      person you were would wake up on the floor of a place with no floor, and be themselves
+      again, and that would be the end of it. Or you could hold on. There is always another
+      one, and none of them can tell.</p>
+    <div class="row">
+      <button class="btn btn--go" data-act="hold-on">Hold on</button>
+      <button class="btn" data-act="let-go">Let go</button>
+    </div>
+    <p class="note" style="opacity:.6;max-width:58ch">Holding on keeps everything you have and
+      puts the thirty back the way you found them. Letting go ends this one.</p>
+  </div>`;
+}
+
+/* what letting go looks like */
+function letGoHtml(){
+  const t = vesselTally();
+  return `<div class="stack" style="max-width:620px;margin:8vh auto 0">
+    <div class="eyebrow">The spark goes out</div>
+    <h2 class="t">You let go</h2>
+    <p class="note" style="max-width:58ch">${t.worn} ${t.worn===1?"body":"bodies"} worn,
+      ${t.spent} worn out, ${t.hosts} people reached, ${t.sectors}
+      ${t.sectors===1?"sector":"sectors"} behind you — and then nothing, which is the point.</p>
+    <p class="note" style="max-width:58ch">Somewhere below, somebody who has been missing an
+      afternoon sits up and cannot say where they have been.</p>
+    <div class="row">
+      <button class="btn btn--go" data-act="begin-again">Begin again</button>
+      <button class="btn" data-act="close">Stay a moment</button>
+    </div>
+  </div>`;
+}
+
 function downHtml(){
   return `<div class="stack" style="max-width:600px;margin:8vh auto 0">
     <div class="eyebrow">Every host you brought has fallen</div>

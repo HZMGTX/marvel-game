@@ -2,6 +2,33 @@
    the pose: walking, flying, diving, landing, swinging
    Part of Multiverse Vessel. Loaded in order from index.html. */
 
+/* Past about fifty metres a full skeleton is thirty draw calls spent on four
+   pixels. This is the same person in five boxes — right colours, right size,
+   still walking — and a street full of people costs a fraction of what it did. */
+function drawCharFar(e){
+  const pal = e.pal, s = e.size;
+  const hurt = (G.t - e.hitT) < 140;
+  const c1 = hurt ? WHITE3 : pal.c1, c2 = hurt ? WHITE3 : pal.c2;
+  const head = hurt ? WHITE3 : (pal.masked || pal.machine ? pal.c1 : pal.skin);
+  const M = {rough:pal.rough, metal:pal.metal, emis:pal.glow ? 0.10 : 0};
+  e.animT += Math.hypot(e.vx, e.vz)*0.012 + 0.0006;
+  const sw = e.moving && !e.fly ? Math.sin(e.animT*2.2)*0.13*s : 0;
+  const lean = e.fly ? 0.9 : 0;
+  const c = Math.cos(e.yaw), sn = Math.sin(e.yaw);
+  const y = e.y;
+  draw(MESH_BOX, e.x, y + 1.24*s, e.z, e.yaw, lean, e.bank||0,
+       0.42*s*pal.bulk, 0.62*s, 0.26*s*pal.bulk, c1, M);
+  draw(MESH_SPH_LO, e.x + sn*lean*0.32*s, y + 1.70*s - lean*0.10*s, e.z + c*lean*0.32*s,
+       0,0,0, 0.23*s, 0.25*s, 0.23*s, head, M);
+  for(const side of [-1, 1]){
+    const ox = side*0.11*s*pal.bulk;
+    draw(MESH_BOX, e.x + ox*c, y + 0.46*s + (e.fly ? 0.30*s : 0), e.z - ox*sn,
+         e.yaw, lean*0.6, 0, 0.17*s, 0.92*s, 0.19*s, c2, M);
+    draw(MESH_BOX, e.x + (ox*2.4)*c + sn*sw*side, y + 1.24*s, e.z - (ox*2.4)*sn + c*sw*side,
+         e.yaw, lean, 0, 0.13*s, 0.56*s, 0.15*s, c1, M);
+  }
+}
+
 function drawChar(e, camDist){
   const s = e.size * 1.0;
   let pal = e.pal;

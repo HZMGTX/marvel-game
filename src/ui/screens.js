@@ -51,6 +51,8 @@ function screenHtml(name, opts){
   if(name==="title") return titleHtml();
   if(name==="pause") return pauseHtml();
   if(name==="cleared") return clearedHtml();
+  if(name==="ending")  return endingHtml();
+  if(name==="let-go")  return letGoHtml();
   if(name==="down") return downHtml();
   return "";
 }

@@ -46,7 +46,7 @@ function spawnBoss(){
   e.maxHp = Math.round(e.maxHp*2.2); e.hp = e.maxHp;
   e.phase = 0; e.enrage = 1;
   G.ents.push(e); G.bossEnt = e;
-  feed(b.name.toUpperCase()+" HAS COME OUT TO MEET YOU","big");
+  feed(bossMeetLine(b), "big");
   G.shake += 1;
 }
 
@@ -85,13 +85,15 @@ function onFoeDown(e){
     if(ai && !S.aiOwned.includes(ai.id)){ S.aiOwned.push(ai.id); feed(ai.name+" is yours to install","big"); }
     G.bossEnt = null;
     if(STORY[G.sector]) S.story[G.sector] = true;
-    setTimeout(()=>openScreen("cleared"), 1500);
+    const last = SECTORS[SECTORS.length-1].id;
+    setTimeout(()=>openScreen(G.sector === last ? "ending" : "cleared"), 1500);
   }
   save();
 }
 /* No reserves. If the body falls, the spark is driven out of the fight. */
 function onHostDown(){
   if(mindCatchesFall(G.player)) return;     /* not this time */
+  S.spent = (S.spent || 0) + 1;             /* a body you wore out */
   G.ended = true;
   setTimeout(()=>openScreen("down"), 800);
 }
