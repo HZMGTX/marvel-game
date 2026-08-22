@@ -1,8 +1,42 @@
 /* == data/gear.js ==
-   seventy-four pieces of gear, each one owned by somebody
+   a hundred and four pieces of gear, each one owned by somebody
    Part of Multiverse Vessel. Loaded in order from index.html. */
 
 const GEAR = [
+/* --- and one for each of the places that had nothing --------------------- */
+["Bone Knife","Ka-Zar","gear",8,3,6,3,"Jungle Law","Sharpened from something that used to be hunting him."],
+["Staff of Polar Power","Nico Minoru","relic",11,3,5,15,"Say It Once","It grants any spell, and never the same one twice."],
+["Bloodstone Amulet","Belasco","relic",15,7,3,12,"Elder God's Debt","Five stones, and the thing that wants them assembled."],
+["Skrull Throne Sceptre","Emperor Dorrek","relic",12,8,2,10,"Empire's Reach","Carried by whoever is currently the Emperor. Currently."],
+["Eternal Cosmic Armour","Ikaris","armor",14,14,6,12,"Celestial Make","Grown, not forged, and older than the species it protects."],
+["Pruning Stick","Mobius M. Mobius","gear",13,3,4,8,"Reset Charge","Points at a timeline and asks it to stop existing."],
+/* --- the street, where the rule has to be visible from the first sector --- */
+["Billy Clubs","Daredevil","gear",7,3,9,4,"Baton Line","Two halves of a cane, joined by a cable, thrown around corners."],
+["Sai","Elektra","gear",9,1,8,3,"Twin Points","Held reversed, so nobody sees the length of them coming."],
+["War Journal Arsenal","The Punisher","gear",11,4,2,5,"Reload","Everything he needs, and a written record of who he used it on."],
+["Skull Vest","The Punisher","armor",3,12,-2,4,"Take The Hit","Plate under a target painted on his own chest."],
+["Crescent Darts","Moon Knight","gear",8,2,7,4,"Three At Once","Thrown flat, in threes, from a cloak that hides the arm."],
+["Cane Sword","Kingpin","gear",10,6,-3,4,"The Weight Behind It","A walking stick from a man who does not need one."],
+["Daywalker's Sword","Blade","gear",12,2,6,4,"Silver Edge","Acid-etched, silver-cored, and never once put away clean."],
+["Bo Staff","Gambit","gear",7,4,7,5,"Charged Card","The staff is for reach. The cards are for what comes after."],
+["Katanas","Deadpool","gear",11,1,8,4,"Whatever Works","Two swords, worn crossed, used badly and effectively."],
+["Psychic Knife","Psylocke","gear",13,0,6,9,"Focused Totality","The focused totality of her telepathic powers, in her hand."],
+["Iron Fist Chi","Iron Fist","substance",14,6,3,10,"Concentrate","The molten heart of Shou-Lao, held in one hand."],
+["Anything At Hand","Bullseye","gear",13,0,7,2,"Never Misses","A pencil, a card, a toothpick. It does not matter which."],
+
+/* --- and the rest of it, where the rule pays off ------------------------ */
+["Hell Cycle Chain","Ghost Rider","relic",15,5,4,9,"Penance Stare","A length of chain that burns whoever it is wrapped around."],
+["Dragonfang","Valkyrie","relic",14,6,5,8,"Ivory Edge","Cut from the tusk of a beast nobody has named since."],
+["Necrosword","Hela","relic",18,4,7,10,"Blades From Nothing","She does not carry a weapon. She grows them."],
+["Hofund","Heimdall","relic",13,10,4,9,"The Bifrost Key","The sword that opens the bridge, held by the one who watches."],
+["Loki's Sceptre","Loki","relic",12,4,6,14,"Mind Touch","Whatever it points at starts agreeing with him."],
+["Pumpkin Bombs","Green Goblin","gear",12,0,4,5,"Airburst","Thrown laughing, from a glider, into a crowd."],
+["Mysterio's Helmet","Mysterio","gear",4,4,3,16,"It Was Never There","A fishbowl full of gas, projectors and other people's fear."],
+["Taskmaster's Shield","Taskmaster","gear",9,9,5,4,"Photographic Reflex","He has already watched you do this once."],
+["Ms. Marvel's Bangle","Ms. Marvel","relic",10,6,5,12,"Hard Light","A family heirloom that turned out to be a Noor conduit."],
+["Star-Lord's Helmet","Star-Lord","gear",3,7,4,6,"Breathe Anywhere","Air, targeting and a tape deck, in that order of importance."],
+["Ultron Sentry Frame","Ultron","armor",16,18,2,14,"There Are More","Adamantium over a mind that has already backed itself up."],
+["Klaw's Sonic Emitter","Klaw","gear",14,2,1,10,"Standing Wave","A hand replaced by the sound it makes."],
 ["Mark LXXXV Armor","Iron Man","armor",18,16,4,20,"Nanotech Reform","Nanoparticles that reassemble as fast as they are torn."],
 ["Mark I Armor","Iron Man","armor",8,14,-4,6,"Cave Flamethrower","Built in a cave. With a box of scraps."],
 ["Hulkbuster","Iron Man","armor",24,30,-10,14,"Veronica Drop","Orbital plating that arrives one plate at a time."],

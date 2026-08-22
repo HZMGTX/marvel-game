@@ -3,7 +3,7 @@
 A 3D action game that runs in a browser. You are a spark with no body of your own. You can
 hold on to a person, and while you do, everything they can do is something you can do.
 
-**674 beings. 74 pieces of gear. 30 artificial minds. 30 sectors.** No libraries, no art
+**674 beings. 104 pieces of gear. 30 artificial minds. 30 sectors.** No libraries, no art
 files, no audio files — every character, every building, every effect and every sound is
 generated from code at runtime.
 
