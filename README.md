@@ -29,7 +29,12 @@ change. Most of them refuse to run on flesh — Ultron will not, J.A.R.V.I.S. wa
 circuitry, Cerebro only amplifies a mind that was already reaching.
 
 **Eight locals draws the boss out.** Put the boss down and the sector is clear, the next
-opens, and a mind comes free.
+opens, a mind comes free, and you get a line of the story back.
+
+**There is always work.** Every sector generates three jobs out of its own roster — hunt a
+named target, hold a marker for thirty seconds while they keep coming, get civilians clear,
+recover a piece of gear from whoever is standing over it, or run down someone who is
+already running. Finish three and new work comes in.
 
 ## Controls
 
@@ -44,11 +49,37 @@ opens, and a mind comes free.
 | Jump | `Space` | JUMP |
 | Fly | hold `Shift` | FLY |
 | Surge | `Q` | SURGE |
+| Guard / parry | hold `F` or right mouse | GUARD |
+| Roll | `Shift` (if you can't fly) | ROLL |
+| Lock on | `T` | LOCK |
 | Change body | `B` | the portrait |
 | Menu | `Esc` | ☰ |
 
 Scroll to pull the camera in or out. Space climbs and Ctrl drops while flying. Jump onto
 the rooftops — they are solid.
+
+## Fighting
+
+Three light strikes chain and the third lands at 1.6× with real knockback. Guarding stops
+most of what you are facing and drains energy — run it dry and your guard breaks. A hit
+that arrives in the first quarter-second of a guard is a **parry**: no damage, the attacker
+staggers, and a quarter of it goes back. Enemies wind up for about half a second before
+anything heavy, with a flare around their feet — that is your cue to block, parry or roll.
+Enough punishment in a few seconds breaks a stance outright, and hits on a broken stance
+land 40% harder.
+
+## Spending what you gather
+
+Essence buys four things, and none of it can be done mid-fight:
+
+- **The vessel** — a deeper surge, faster out-of-combat recovery, more essence per kill,
+  longer invulnerability on rolls. These carry across every body you wear.
+- **Abilities** — each of a body's four moves can be worked up three ranks: +9% damage and
+  6% faster recovery per rank.
+- **Gear** — three ranks per piece, and each rank also lowers how many kills it takes to
+  attune.
+- **Mastery** costs nothing but use: every kill while wearing a body counts, and 25 / 75 /
+  150 each add +4% to everything they are.
 
 ## Under the hood
 

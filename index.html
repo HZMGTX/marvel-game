@@ -2113,6 +2113,8 @@ const clone = o => JSON.parse(JSON.stringify(o));
 const DEFAULT_STATE = {
   started:false, unlocked:[], gearOwned:[], attuned:[], aiOwned:[], installedAi:null,
   host:null, loadout:{}, levels:{}, xp:{}, essence:0,
+  missionsDone:0, missionRound:0, missionSeen:{}, story:{},
+  abil:{}, vessel:{}, gearLv:{}, mastery:{},
   defeated:{}, cleared:{}, kills:{}, sector:"hk", wins:0, gearKills:{}, tutorial:0
 };
 let S = clone(DEFAULT_STATE);
@@ -2174,18 +2176,106 @@ function unitStats(b, o){
   const lv = o.level||1;
   const scale = (o.scale||1) * (1 + (lv-1)*0.055);
   const gear = o.gear||null, pot = o.pot||0;
+  const gmul = gear ? 1 + gearLevel(gear.id)*0.10 : 1;
+  const mast = 1 + masteryTier(b.id)*0.04;
   const ai = (o.ai && aiAllowed(o.ai, b, pot>0?gear:null)) ? o.ai : null;
   const st = {
-    p: b.st.p*scale + (pot?gear.mods.p*pot:0) + (ai?ai.mods.p:0),
-    d: b.st.d*scale + (pot?gear.mods.d*pot:0) + (ai?ai.mods.d:0),
-    s: b.st.s*scale + (pot?gear.mods.s*pot:0) + (ai?ai.mods.s:0),
-    n: b.st.n*scale + (pot?gear.mods.n*pot:0) + (ai?ai.mods.n:0)
+    p: (b.st.p*scale + (pot?gear.mods.p*pot*gmul:0) + (ai?ai.mods.p:0)) * mast,
+    d: (b.st.d*scale + (pot?gear.mods.d*pot*gmul:0) + (ai?ai.mods.d:0)) * mast,
+    s: (b.st.s*scale + (pot?gear.mods.s*pot*gmul:0) + (ai?ai.mods.s:0)) * mast,
+    n: (b.st.n*scale + (pot?gear.mods.n*pot*gmul:0) + (ai?ai.mods.n:0)) * mast
   };
   for(const k in st) st[k] = Math.max(1, Math.round(st[k]));
   const maxHp = Math.round(130 + b.tier*42 + st.d*1.2 + (pot?gear.mods.d*pot*2.2:0) + (ai?ai.mods.d*1.6:0));
   return {st, maxHp, gear:pot>0?gear:null, pot, ai};
 }
 
+
+/* ==========================================================================
+   SPENDING WHAT YOU GATHER
+   Essence used to buy one thing. Now it buys four, and using a body a lot
+   makes it permanently better at being that body.
+   ========================================================================== */
+const ABIL_MAX = 3, VESSEL_MAX = 3, GEAR_MAX = 3;
+const ABIL_SLOTS = ["light","power","util","ult"];
+
+const VESSEL_UP = {
+  surge:  {name:"Deeper spark",   line:"The surge meter fills 18% faster per rank, and burning through lasts a second longer."},
+  regen:  {name:"Quicker knit",   line:"Out of combat the body closes up 45% faster per rank."},
+  essence:{name:"Finer reading",  line:"Everything you beat gives 14% more essence per rank."},
+  iframe: {name:"Looser grip",    line:"Rolls and recoveries give you 70 ms more untouchable per rank."}
+};
+
+const abilLevel  = (hid, slot) => ((S.abil||{})[hid]||{})[slot] || 0;
+const vesselLevel = key => (S.vessel||{})[key] || 0;
+const gearLevel  = gid => (S.gearLv||{})[gid] || 0;
+const masteryOf  = hid => (S.mastery||{})[hid] || 0;
+const MASTERY_STEPS = [25, 75, 150];
+function masteryTier(hid){
+  const k = masteryOf(hid);
+  let t = 0;
+  for(const s of MASTERY_STEPS) if(k >= s) t++;
+  return t;
+}
+function masteryNext(hid){
+  const k = masteryOf(hid);
+  for(const s of MASTERY_STEPS) if(k < s) return s;
+  return null;
+}
+
+function abilCost(hid, slot){
+  const b = BY_ID[hid];
+  return Math.round((130 + b.tier*22) * (abilLevel(hid,slot)+1));
+}
+function vesselCost(key){ return Math.round(320 * Math.pow(vesselLevel(key)+1, 1.35)); }
+function gearCost(gid){ return Math.round(240 * (gearLevel(gid)+1)); }
+
+function upgradeAbility(hid, slot){
+  if(inCombat()) { feed("Not mid-fight",""); return false; }
+  if(abilLevel(hid,slot) >= ABIL_MAX) return false;
+  const c = abilCost(hid, slot);
+  if(S.essence < c) return false;
+  S.essence -= c;
+  S.abil = S.abil||{}; S.abil[hid] = S.abil[hid]||{};
+  S.abil[hid][slot] = abilLevel(hid,slot)+1;
+  save(); syncHostLive();
+  feed(BY_ID[hid].name+" — "+ARCH[BY_ID[hid].arch].kit[ABIL_SLOTS.indexOf(slot)].n+" sharpened","good");
+  return true;
+}
+function upgradeVessel(key){
+  if(vesselLevel(key) >= VESSEL_MAX) return false;
+  const c = vesselCost(key);
+  if(S.essence < c) return false;
+  S.essence -= c;
+  S.vessel = S.vessel||{}; S.vessel[key] = vesselLevel(key)+1;
+  save();
+  feed(VESSEL_UP[key].name+" — rank "+S.vessel[key],"good");
+  return true;
+}
+function upgradeGear(gid){
+  if(inCombat()) { feed("Not mid-fight",""); return false; }
+  if(gearLevel(gid) >= GEAR_MAX) return false;
+  const c = gearCost(gid);
+  if(S.essence < c) return false;
+  S.essence -= c;
+  S.gearLv = S.gearLv||{}; S.gearLv[gid] = gearLevel(gid)+1;
+  save(); syncHostLive();
+  feed(GEAR_BY_ID[gid].name+" — worked to rank "+S.gearLv[gid],"good");
+  return true;
+}
+/* upgrades bring a piece closer to answering anyone */
+function attuneNeeded(gid){ return Math.max(4, 10 - gearLevel(gid)*2); }
+
+function noteKill(hostId){
+  S.mastery = S.mastery||{};
+  const before = masteryTier(hostId);
+  S.mastery[hostId] = masteryOf(hostId) + 1;
+  const after = masteryTier(hostId);
+  if(after > before){
+    feed(BY_ID[hostId].name+" — mastery "+after+", everything they do is sharper","big");
+    syncHostLive();
+  }
+}
 
 /* --------------------------------------------------------------- entities */
 function makeEnt(beingId, x, z, team, o){
@@ -2466,9 +2556,14 @@ const PLAYER_HP_MULT = 1.7;
 const ENEMY_DMG_MULT = 0.55;
 const HIT_IFRAME = 340;
 
+function canHit(att, def){
+  if(!def || def.dead || def.team === att.team) return false;
+  if(def.team === "civ" && att.team === "you") return false;   /* not on your watch */
+  return true;
+}
 function dealDamage(att, def, mul, o){
   o = o||{};
-  if(!def || def.dead || def.team===att.team) return 0;
+  if(!canHit(att, def)) return 0;
   if(def.team==="you" && hasFx(def,"iframe")) return 0;
   const K = mitigationK(def);
   const dEff = def.st.d * (1 - (o.pierce?0.4:0));
@@ -2538,7 +2633,7 @@ function dealDamage(att, def, mul, o){
   def.hp -= dmg;
   def.hitT = now(); def.lastHurt = now();
   if(att.team==="you" || def.team==="you") G.lastCombat = now();
-  if(def.team==="you") setFx(def,"iframe",HIT_IFRAME);
+  if(def.team==="you") setFx(def,"iframe", HIT_IFRAME + vesselLevel("iframe")*70);
   if(o.knock){
     const a = Math.atan2(def.x-att.x, def.z-att.z);
     const k = o.knock*0.022;
@@ -2557,7 +2652,7 @@ function dealDamage(att, def, mul, o){
   popNumber(def, dmg, isCrit, att.team==="you");
   spark(def.x, def.y + def.height*0.62, def.z, isCrit?14:7, att.team==="you"?SPARK_A:SPARK_B);
   if(att.team==="you"){ G.combo++; G.comboT = now()+2200; G.surge = Math.min(100, G.surge + dmg/def.maxHp*14); }
-  else G.surge = Math.min(100, G.surge + dmg/def.maxHp*88);
+  else G.surge = Math.min(100, G.surge + dmg/def.maxHp*88*(1 + vesselLevel("surge")*0.18));
   if(def.hp<=0) killEnt(def);
   return dmg;
 }
@@ -2625,11 +2720,13 @@ function useAbility(e, slot){
   const o = {knock:a.knock, bleed:a.bleed, burn:a.burn, weaken:a.weaken, mark:a.mark,
              stun:a.stun, drain:a.drain, pierce:a.pierce};
   /* three light strikes run together; the third one lands properly */
-  let mul = a.mul, step = 0;
+  const arank = (e.team==="you") ? abilLevel(e.id, slot) : 0;
+  if(arank) e.cds[slot] = now() + a.cd * (1 - arank*0.06);
+  let mul = a.mul * (1 + arank*0.09), step = 0;
   if(slot === "light"){
     step = (now() - (e.comboT||0) < COMBO_WINDOW) ? ((e.comboStep||0)+1) % 3 : 0;
     e.comboStep = step; e.comboT = now();
-    mul = a.mul * COMBO_MUL[step];
+    mul = mul * COMBO_MUL[step];
     if(o.knock) o.knock *= COMBO_KNOCK[step];
     if(step === 2){ o.knock = (o.knock||120)*1.2; e.cds.light = now() + a.cd*1.6; }
   }
@@ -2710,7 +2807,7 @@ function shoot(e, yaw, pitch, a, o){
 function coneHit(e, reach, arc, mul, o){
   const f = fwd(e);
   for(const t of G.ents){
-    if(t.dead || t.team===e.team) continue;
+    if(!canHit(e,t)) continue;
     const dx=t.x-e.x, dz=t.z-e.z, d=Math.hypot(dx,dz);
     if(d > reach + t.rad) continue;
     if(Math.abs(t.y - e.y) > 2.0) continue;
@@ -2720,7 +2817,7 @@ function coneHit(e, reach, arc, mul, o){
 }
 function sphereHit(e, x,y,z, R, mul, o){
   for(const t of G.ents){
-    if(t.dead || t.team===e.team) continue;
+    if(!canHit(e,t)) continue;
     if(Math.hypot(t.x-x, (t.y+t.height*.5)-(y+0.9), t.z-z) > R + t.rad) continue;
     dealDamage(e,t,mul,o);
   }
@@ -2728,7 +2825,7 @@ function sphereHit(e, x,y,z, R, mul, o){
 function rayHit(e, len, wid, mul, o){
   const f = fwd(e);
   for(const t of G.ents){
-    if(t.dead || t.team===e.team) continue;
+    if(!canHit(e,t)) continue;
     const dx=t.x-e.x, dz=t.z-e.z;
     const along = dx*f.x + dz*f.z;
     if(along < 0 || along > len) continue;
@@ -2741,7 +2838,7 @@ function rayHit(e, len, wid, mul, o){
 function nearestFoe(e, maxd){
   let best=null, bd=maxd||1e9;
   for(const t of G.ents){
-    if(t.dead || t.team===e.team) continue;
+    if(!canHit(e,t)) continue;
     const d = distXZ(t,e);
     if(d<bd){ bd=d; best=t; }
   }
@@ -2751,7 +2848,7 @@ function nearestFoe(e, maxd){
 /* ------------------------------------------------------------ game state */
 const G = {
   world:null, sector:"hk", ents:[], projs:[], parts:[], pops:[], beams:[], rings:[], arcs:[],
-  orbits:[], drops:[], player:null,
+  orbits:[], drops:[], player:null, mission:null,
   camYaw:0, camPitch:0.26, camDist:6.4, shake:0,
   t:0, last:0, surge:0, combo:0, comboT:0, spawnT:0, bossEnt:null, lastCombat:-1e9,
   freeze:0, lockTarget:null,
@@ -2799,8 +2896,9 @@ function onFoeDown(e){
   const b = e.b;
   if(!S.unlocked.includes(b.id)){ S.unlocked.push(b.id); feed("NEW HOST — "+b.name,"big"); }
   S.defeated[b.id] = true;
-  const gained = b.tier*9 + 12 + (e.boss?60:0);
+  const gained = Math.round((b.tier*9 + 12 + (e.boss?60:0)) * (1 + vesselLevel("essence")*0.14));
   S.essence += gained;
+  if(G.player) noteKill(G.player.id);
   S.kills[G.sector] = killsIn(G.sector) + 1;
   (GEAR_BY_OWNER[b.id]||[]).forEach(g=>{
     if(!S.gearOwned.includes(g.id)) G.drops.push({x:e.x, y:e.y, z:e.z, gid:g.id, t:0});
@@ -2815,7 +2913,7 @@ function onFoeDown(e){
     }
     if(u.gear && u.pot===1){
       S.gearKills[u.gear.id] = (S.gearKills[u.gear.id]||0)+1;
-      if(S.gearKills[u.gear.id]>=10 && !S.attuned.includes(u.gear.id)){
+      if(S.gearKills[u.gear.id]>=attuneNeeded(u.gear.id) && !S.attuned.includes(u.gear.id)){
         S.attuned.push(u.gear.id); feed(u.gear.name+" is attuned — any host can echo it now","big");
       }
     }
@@ -2825,6 +2923,7 @@ function onFoeDown(e){
     const ai = AI_LIST[sectorIndex(G.sector) % AI_LIST.length];
     if(ai && !S.aiOwned.includes(ai.id)){ S.aiOwned.push(ai.id); feed(ai.name+" is yours to install","big"); }
     G.bossEnt = null;
+    if(STORY[G.sector]) S.story[G.sector] = true;
     setTimeout(()=>openScreen("cleared"), 1500);
   }
   save();
@@ -2943,7 +3042,7 @@ function stepEnt(e, dts){
   if(hasFx(e,"bleed") && G.t % 420 < dts*1000) e.hp -= e.maxHp*0.011;
   if(hasFx(e,"regen") && G.t % 420 < dts*1000) e.hp = Math.min(e.maxHp, e.hp+e.maxHp*0.014);
   if(e.ai && e.ai.fx==="repair" && G.t % 900 < dts*1000) e.hp = Math.min(e.maxHp, e.hp+e.maxHp*0.012);
-  if(e.team==="you" && now()-(e.lastHurt||0) > 4200 && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp+e.maxHp*0.05*dts);
+  if(e.team==="you" && now()-(e.lastHurt||0) > 4200 && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp*0.05*dts*(1 + vesselLevel("regen")*0.45));
   if(e.hp<=0 && !e.dead){ killEnt(e); return; }
 
   /* multi-hit specials */
@@ -2992,7 +3091,7 @@ function update(dt){
     if(input.dodge && !p.canFly) startRoll(p, mv);
     if(!p.blocking) for(const slot of ["light","power","util","ult"]) if(input[slot]) useAbility(p, slot);
     if(input.surgeGo && G.surge>=100){
-      G.surge = 0; setFx(p,"surge",5000);
+      G.surge = 0; setFx(p,"surge", 5000 + vesselLevel("surge")*1000);
       ["burn","bleed","weaken","mark","stun"].forEach(k=>p.fx[k]=0);
       p.nrg = p.maxNrg; shock(p.x,p.y+0.4,p.z,4,GOLD3,700); G.shake += .7;
       feed("BURN THROUGH — the vessel stops being careful","big");
@@ -3012,6 +3111,7 @@ function update(dt){
       /* something is coming for you — that counts as being in a fight */
       if(p && !p.dead && e.engaged && distXZ(e,p) < 25) G.lastCombat = G.t;
     }
+    else if(e.team==="civ"){ civThink(e, dt); }
     else if(G.paused){ e.mx = e.mz = 0; }
     stepEnt(e, dts);
   }
@@ -3093,7 +3193,7 @@ function update(dt){
   }
 
   /* keep the streets busy */
-  const foes = G.ents.filter(e=>!e.dead && e.team==="foe").length;
+  const foes = G.ents.filter(e=>!e.dead && e.team==="foe" && !e.missionTag).length;
   G.spawnT -= dt;
   const cap = 5 + Math.min(3, (sectorIndex(G.sector)/8)|0);
   if(foes < cap && G.spawnT<=0 && !G.paused){ spawnWanderer(); G.spawnT = 2400; }
@@ -3104,6 +3204,7 @@ function update(dt){
     const e = G.ents[i];
     if(e.dead && now()-e.deadT > 1000 && e!==G.player) G.ents.splice(i,1);
   }
+  updateMission(dt);
   if(G.combo && now()>G.comboT) G.combo = 0;
   G.shake *= Math.pow(0.0018, dts);
 }
@@ -3119,7 +3220,7 @@ function startRoll(e, mv){
   e.rollT = now() + 340; e.rollCd = now() + ROLL_CD;
   e.rollSpeed = 12.5;
   e.blocking = false;
-  setFx(e, "iframe", 300);
+  setFx(e, "iframe", 300 + (e.team==="you" ? vesselLevel("iframe")*70 : 0));
   spark(e.x, e.y+0.4, e.z, 6, GUARD3);
 }
 function toggleLock(){
@@ -3128,6 +3229,265 @@ function toggleLock(){
   if(t){ G.lockTarget = t; feed("Locked on "+t.b.name, "good"); }
 }
 function angDelta(a,b){ let d=(b-a)%6.283; if(d>3.1416) d-=6.283; if(d<-3.1416) d+=6.283; return d; }
+
+/* ==========================================================================
+   MISSIONS
+   Free roam needs a reason to walk somewhere. Every sector generates work
+   out of its own roster, so a mission in Hell's Kitchen reads like Hell's
+   Kitchen and a mission on Titan reads like Titan.
+   ========================================================================== */
+const MISSION_DEFS = {
+  hunt: {
+    name: "Bring down",
+    line: t => `${t} is somewhere in this sector. Find them and put them down.`,
+    reward: 1.6
+  },
+  hold: {
+    name: "Hold the line",
+    line: () => `Stand your ground inside the marker for thirty seconds. They will keep coming.`,
+    reward: 1.4
+  },
+  rescue: {
+    name: "Get them clear",
+    line: n => `${n} people are pinned down out there. Reach each of them and they will run.`,
+    reward: 1.3
+  },
+  recover: {
+    name: "Recover",
+    line: t => `${t} is lying in the open with something standing over it. Take it back.`,
+    reward: 1.5
+  },
+  chase: {
+    name: "Run them down",
+    line: t => `${t} is running. Catch them before they are gone.`,
+    reward: 1.4
+  }
+};
+
+const CIVILIAN_NAMES = ["Bystander","Paramedic","Night Nurse","Beat Cop","Shop Owner",
+  "Kid on a Bike","Cab Driver","Reporter","Fire Marshal","Dock Worker"];
+
+/* three offers per sector, stable until you clear them */
+function missionOffers(sectorId){
+  const rng = mulberry(hash(sectorId + "/m" + (S.missionRound||0)));
+  const pool = sectorBeings(sectorId).slice().sort((a,b)=>a.tier-b.tier);
+  const boss = sectorBoss(sectorId);
+  const cands = pool.filter(b=>b.id!==boss.id);
+  const gearHere = cands.flatMap(b=>(GEAR_BY_OWNER[b.id]||[]).map(g=>({g, b})));
+  const kinds = ["hunt","hold","rescue","chase"];
+  if(gearHere.length) kinds.push("recover");
+  const out = [];
+  for(let i=0;i<3;i++){
+    const kind = kinds[Math.floor(rng()*kinds.length)];
+    const target = cands[Math.floor(rng()*cands.length)] || boss;
+    const pick = gearHere.length ? gearHere[Math.floor(rng()*gearHere.length)] : null;
+    out.push({
+      id: sectorId+"/"+(S.missionRound||0)+"/"+i,
+      kind, sector: sectorId,
+      targetId: target.id,
+      gearId: kind==="recover" && pick ? pick.g.id : null,
+      gearOwner: kind==="recover" && pick ? pick.b.id : null,
+      count: 3,
+      tier: target.tier
+    });
+  }
+  return out;
+}
+function missionTitle(m){
+  const d = MISSION_DEFS[m.kind];
+  if(m.kind==="hunt")    return d.name+" "+BY_ID[m.targetId].name;
+  if(m.kind==="recover") return d.name+" the "+GEAR_BY_ID[m.gearId].name;
+  if(m.kind==="chase")   return d.name+" "+BY_ID[m.targetId].name;
+  return d.name;
+}
+function missionLine(m){
+  const d = MISSION_DEFS[m.kind];
+  if(m.kind==="hunt")    return d.line(BY_ID[m.targetId].name);
+  if(m.kind==="recover") return d.line(GEAR_BY_ID[m.gearId].name);
+  if(m.kind==="chase")   return d.line(BY_ID[m.targetId].name);
+  if(m.kind==="rescue")  return d.line(m.count);
+  return d.line();
+}
+
+function startMission(m){
+  if(!G.world || G.mission) return;
+  const p = G.player;
+  const spot = pickSpawn(p, 34, 90);
+  G.mission = {def:m, t:0, done:false, failed:false, marker:{x:spot.x, z:spot.z},
+               held:0, freed:0, ents:[]};
+  const M = G.mission;
+
+  if(m.kind === "hunt"){
+    const e = makeEnt(m.targetId, spot.x, spot.z, "foe", {scale:1.12, mission:true});
+    e.missionTag = "hunt"; e.maxHp = Math.round(e.maxHp*1.35); e.hp = e.maxHp;
+    G.ents.push(e); M.ents.push(e); M.marker = e;
+  }
+  else if(m.kind === "chase"){
+    const e = makeEnt(m.targetId, spot.x, spot.z, "foe", {scale:0.95});
+    e.missionTag = "runner"; e.runner = true;
+    e.act = Object.assign({}, e.act, {spd: e.act.spd*1.35});
+    G.ents.push(e); M.ents.push(e); M.marker = e;
+    M.limit = 45000;
+  }
+  else if(m.kind === "recover"){
+    G.drops.push({x:spot.x, y:0, z:spot.z, gid:m.gearId, t:0});
+    for(let i=0;i<2;i++){
+      const g = makeEnt(m.gearOwner, spot.x + (i?4:-4), spot.z + 3, "foe", {scale:1.05});
+      G.ents.push(g); M.ents.push(g);
+    }
+  }
+  else if(m.kind === "hold"){
+    M.limit = null; M.need = 30000;
+  }
+  else if(m.kind === "rescue"){
+    const civPool = BEINGS.filter(b=>b.tags.includes("civilian"));
+    for(let i=0;i<m.count;i++){
+      const s2 = pickSpawn(p, 26, 100);
+      const cb = civPool[(hash(m.id+"c"+i)>>>5) % civPool.length] || BY_ID["turk-barrett"];
+      const c = makeEnt(cb.id, s2.x, s2.z, "civ", {scale:0.7});
+      c.civ = true; c.civName = CIVILIAN_NAMES[(hash(m.id+i)>>>3) % CIVILIAN_NAMES.length];
+      c.maxHp = 120; c.hp = 120; c.size = 0.92; c.height = 1.8*0.92; c.rad = 0.34;
+      G.ents.push(c); M.ents.push(c);
+    }
+    M.limit = 90000;
+  }
+  feed(missionTitle(m).toUpperCase(), "big");
+  feed(missionLine(m), "");
+  save();
+}
+
+function abandonMission(){
+  if(!G.mission) return;
+  G.mission.ents.forEach(e=>{ if(!e.dead && e.team!=="you") e.dead = true, e.deadT = now(); });
+  G.mission = null;
+  feed("Mission abandoned", "");
+}
+
+function updateMission(dt){
+  const M = G.mission;
+  if(!M || M.done) return;
+  const p = G.player;
+  M.t += dt;
+  const m = M.def;
+
+  if(M.limit && M.t > M.limit){ failMission("Out of time"); return; }
+
+  if(m.kind === "hunt"){
+    const e = M.ents[0];
+    if(e && e.dead) return completeMission();
+  }
+  else if(m.kind === "chase"){
+    const e = M.ents[0];
+    if(!e || e.dead) return completeMission();
+    if(p && distXZ(e,p) < 3.2) return completeMission();
+    /* it runs from you, and it is quick */
+    if(p){
+      const a = Math.atan2(e.x-p.x, e.z-p.z);
+      e.mx = Math.sin(a); e.mz = Math.cos(a);
+      e.yaw = a; e.engaged = false; e.atkT = now()+9999; e.tell = null;
+    }
+  }
+  else if(m.kind === "recover"){
+    if(!G.drops.some(d=>d.gid === m.gearId)) return completeMission();
+  }
+  else if(m.kind === "hold"){
+    if(p && Math.hypot(p.x-M.marker.x, p.z-M.marker.z) < 9){
+      M.held += dt;
+      if(M.spawnT === undefined) M.spawnT = 0;
+      M.spawnT -= dt;
+      if(M.spawnT <= 0){ spawnWanderer(); M.spawnT = 3200; }
+      if(M.held >= M.need) return completeMission();
+    }
+  }
+  else if(m.kind === "rescue"){
+    for(const c of M.ents){
+      if(c.freed || c.dead) continue;
+      if(p && distXZ(c,p) < 2.6){
+        c.freed = true; M.freed++;
+        G.pops.push({x:c.x, y:c.y+2, z:c.z, txt:"CLEAR", t:0, life:900, col:"#5FE39A", size:16});
+        feed((c.civName||"They")+" runs for it — "+M.freed+" of "+m.count, "good");
+      }
+    }
+    if(M.freed >= m.count) return completeMission();
+    if(M.ents.every(c=>c.dead && !c.freed)) return failMission("They did not make it");
+  }
+}
+
+function completeMission(){
+  const M = G.mission; if(!M || M.done) return;
+  M.done = true;
+  const m = M.def;
+  const gain = Math.round((60 + m.tier*22) * MISSION_DEFS[m.kind].reward);
+  S.essence += gain;
+  S.missionsDone = (S.missionsDone||0) + 1;
+  S.missionSeen = (S.missionSeen||{}); S.missionSeen[m.id] = true;
+  const p = G.player;
+  if(p){
+    S.xp[p.id] = (S.xp[p.id]||0) + Math.round(gain*0.6);
+    while(S.xp[p.id] >= xpNeeded(level(p.id))){
+      S.xp[p.id] -= xpNeeded(level(p.id)); S.levels[p.id] = level(p.id)+1;
+      feed(p.b.name+" reaches level "+S.levels[p.id],"good");
+    }
+    shock(p.x, p.y+0.4, p.z, 4, GOLD3, 700);
+  }
+  feed("MISSION COMPLETE — +"+gain+" essence", "big");
+  if(S.missionsDone % 3 === 0){ S.missionRound = (S.missionRound||0)+1; feed("New work has come up", ""); }
+  G.mission = null;
+  save();
+}
+function failMission(why){
+  const M = G.mission; if(!M) return;
+  M.ents.forEach(e=>{ if(!e.dead && e.team!=="you"){ e.dead = true; e.deadT = now(); } });
+  G.mission = null;
+  feed("MISSION FAILED — "+why, "");
+}
+
+/* civilians: they do not fight, they get away from whatever is loudest */
+function civThink(e, dt){
+  const threat = nearestThreat(e, 40);
+  if(e.freed || threat){
+    const from = threat || G.player;
+    if(from){
+      const a = Math.atan2(e.x-from.x, e.z-from.z);
+      e.mx = Math.sin(a); e.mz = Math.cos(a);
+      e.yaw = a;
+    }
+  } else {
+    e.aiT -= dt;
+    if(e.aiT<=0){ e.aiT = 1800+Math.random()*2600; e.wander = Math.random()*6.283; }
+    e.mx = Math.sin(e.wander||0)*.3; e.mz = Math.cos(e.wander||0)*.3;
+    e.yaw = e.wander||0;
+  }
+}
+function nearestThreat(e, maxd){
+  let best=null, bd=maxd||1e9;
+  for(const o of G.ents){
+    if(o.dead || o.team!=="foe") continue;
+    const d = distXZ(o,e);
+    if(d<bd){ bd=d; best=o; }
+  }
+  return best;
+}
+
+/* ------------------------------------------------------------------ story */
+const STORY = {
+  hk:   "The first one is always the worst. You did not ask what they wanted with the rest of their evening.",
+  qns:  "One of them looked straight at where you were, and there was nothing there to look at.",
+  man:  "They keep records here. Somewhere in a file is a list of people who behaved strangely for one afternoon.",
+  raft: "Every cell in this place holds somebody who could not stop. You are wondering when you last chose to.",
+  wch:  "A telepath brushed the inside of the body you were wearing and recoiled. Not from the body.",
+  kra:  "The island knew. It let you walk anyway, the way you let a stray in out of the rain.",
+  wak:  "The panther god watched you the whole way through and did not say a word about it.",
+  lat:  "Doom addressed the spark, not the mouth. Nobody has done that before.",
+  asg:  "Odin has a word for what you are. He would not repeat it.",
+  sanc: "Strange offered to put you back where you came from. You did not know how to answer.",
+  dark: "Dormammu made an offer. The frightening part was how reasonable it sounded.",
+  titan:"Thanos said you were the only honest thing he had met in a century, and meant it as a compliment.",
+  bw:   "On a world stitched from dead universes, nobody could tell you were borrowed.",
+  tva:  "The file on you is one line long, and it has been redacted twice.",
+  bleed:"Between universes there is nothing to hold on to, and you are still here. That answers something.",
+  above:"They have all been watching. The question was never whether you could. It was whether you would stop."
+};
 
 /* ------------------------------------------------------------------ scene */
 const UI = document.getElementById("ui");
@@ -3195,7 +3555,25 @@ function buildFrame(){
          {kind:3, alpha:0.30, emis:0.6});
   }
 
+  buildMarker();
   buildEffects();
+}
+
+/* a column of light over whatever the mission wants from you */
+function buildMarker(){
+  const M = G.mission;
+  if(!M || M.done) return;
+  const mk = M.marker;
+  if(!mk) return;
+  const x = mk.x, z = mk.z;
+  const pulse = 0.6 + Math.sin(G.t*0.004)*0.2;
+  draw(MESH_TUBE, x, 14, z, 0,0,0, 2.2, 28, 2.2, GOLD3, {kind:3, alpha:0.11*pulse, emis:0.5});
+  const R = (M.def.kind === "hold") ? 9 : 1.9;
+  for(let i=0;i<18;i++){
+    const a = i/18*6.283 + G.t*0.0008;
+    draw(MESH_BOX, x+Math.sin(a)*R, 0.25, z+Math.cos(a)*R, a,0,0,
+         0.22, 0.5, 0.22, GOLD3, {kind:3, emis:0.9, alpha:0.55*pulse});
+  }
 }
 const GOLD3 = srgb("#F7BC46");
 
@@ -3455,6 +3833,19 @@ function drawOverlay(){
   for(const e of G.ents){
     if(e.dead || e===p) continue;
     const near = p ? distXZ(e,p) : 999;
+    if(e.team === "civ"){
+      if(near > 55) continue;
+      const sc0 = project(e.x, e.y + e.height*1.16, e.z);
+      if(!sc0) continue;
+      UX.globalAlpha = Math.max(0.3, 1 - near/60);
+      UX.font = '700 11px "Chivo Mono",ui-monospace,monospace'; UX.textAlign = "center";
+      UX.lineWidth = 3; UX.strokeStyle = "rgba(0,0,0,.85)";
+      const lbl = e.freed ? "SAFE" : (e.civName || "Civilian");
+      UX.strokeText(lbl, sc0.x, sc0.y); UX.fillStyle = e.freed ? "#5FE39A" : "#8FE8FF";
+      UX.fillText(lbl, sc0.x, sc0.y);
+      UX.globalAlpha = 1;
+      continue;
+    }
     if(!e.boss && near > 40) continue;
     const sc = project(e.x, e.y + e.height*1.16, e.z);
     if(!sc || sc.x<-140 || sc.x>VW+140) continue;
@@ -3522,6 +3913,40 @@ function drawOverlay(){
     UX.moveTo(VW/2, VH/2-9); UX.lineTo(VW/2, VH/2-3);
     UX.moveTo(VW/2, VH/2+3); UX.lineTo(VW/2, VH/2+9);
     UX.stroke(); UX.globalAlpha = 1;
+  }
+  const M = G.mission;
+  if(M && !M.done && p){
+    const mk = M.marker;
+    const d = mk ? Math.round(Math.hypot(mk.x-p.x, mk.z-p.z)) : 0;
+    let sub = "";
+    if(M.def.kind==="hold")   sub = Math.max(0, Math.ceil((M.need-M.held)/1000))+"s to hold";
+    if(M.def.kind==="rescue") sub = M.freed+" / "+M.def.count+" clear";
+    if(M.limit)               sub += (sub?" · ":"")+Math.max(0,Math.ceil((M.limit-M.t)/1000))+"s left";
+    UX.textAlign = "center";
+    UX.font = '700 13px Bungee, sans-serif';
+    UX.lineWidth = 4; UX.strokeStyle = "rgba(0,0,0,.8)";
+    UX.strokeText(missionTitle(M.def).toUpperCase(), VW/2, 30);
+    UX.fillStyle = "#F7BC46"; UX.fillText(missionTitle(M.def).toUpperCase(), VW/2, 30);
+    UX.font = '700 11px "Chivo Mono",ui-monospace,monospace';
+    const line = (sub ? sub+" · " : "") + d + " m";
+    UX.strokeText(line, VW/2, 48); UX.fillStyle = "#D6CEEA"; UX.fillText(line, VW/2, 48);
+    /* an arrow at the edge if the marker is off screen */
+    if(mk){
+      const sc = project(mk.x, 2, mk.z);
+      const m2 = 60;
+      if(!sc || sc.x<m2 || sc.x>VW-m2 || sc.y<m2 || sc.y>VH-m2){
+        let ang;
+        if(sc) ang = Math.atan2(sc.y-VH/2, sc.x-VW/2);
+        else { const rel = Math.atan2(mk.x-p.x, mk.z-p.z) - G.camYaw;
+               ang = Math.atan2(-Math.cos(rel), Math.sin(rel)); }
+        const k = Math.min(Math.abs((VW/2-m2)/(Math.cos(ang)||1e-6)), Math.abs((VH/2-m2)/(Math.sin(ang)||1e-6)));
+        const px2 = VW/2 + Math.cos(ang)*k, py2 = VH/2 + Math.sin(ang)*k;
+        UX.save(); UX.translate(px2,py2); UX.rotate(ang);
+        UX.fillStyle = "#F7BC46";
+        UX.beginPath(); UX.moveTo(16,0); UX.lineTo(-10,-9); UX.lineTo(-4,0); UX.lineTo(-10,9);
+        UX.closePath(); UX.fill(); UX.restore();
+      }
+    }
   }
   if(G.combo>2){
     UX.globalAlpha = Math.min(1,(G.comboT-G.t)/700);
@@ -3918,14 +4343,14 @@ function controlsHtml(){
 }
 
 function pauseHtml(){
-  const tabs = ["body","gear","minds","sectors","codex","rules"];
+  const tabs = ["body","work","power","gear","minds","sectors","codex","rules"];
   return `<div class="stack">
     <div class="row" style="justify-content:space-between">
       <h2 class="t">The Vessel</h2>
       <button class="btn btn--go" data-act="close">Back to it</button>
     </div>
     <div class="tabs">${tabs.map(t=>`<button data-tab="${t}" aria-current="${menuTab===t}">${t}</button>`).join("")}</div>
-    ${menuTab==="body"?bodyTab():menuTab==="gear"?gearTab():menuTab==="minds"?mindsTab()
+    ${menuTab==="body"?bodyTab():menuTab==="work"?workTab():menuTab==="power"?powerTab():menuTab==="gear"?gearTab():menuTab==="minds"?mindsTab()
       :menuTab==="sectors"?sectorsTab():menuTab==="codex"?codexTab():rulesTab()}
   </div>`;
 }
@@ -3998,6 +4423,90 @@ function bodyTab(){
     <button class="btn btn--sm" data-act="more-bodies">Show the other ${list.length-shown.length}</button></div>`:""}`;
 }
 
+function powerTab(){
+  const hid = S.host, host = hid?BY_ID[hid]:null;
+  const locked = inCombat();
+  const bar = (n,max)=>`<span class="mono" style="color:var(--gold)">${"■".repeat(n)}${"□".repeat(max-n)}</span>`;
+  const abil = host ? ABIL_SLOTS.map((slot,i)=>{
+    const lv = abilLevel(hid, slot), cost = abilCost(hid, slot);
+    const nm = i===3 ? (host.sig || ARCH[host.arch].kit[3].n) : ARCH[host.arch].kit[i].n;
+    const can = lv<ABIL_MAX && S.essence>=cost && !locked;
+    return `<div class="cardb" style="flex-direction:column;align-items:stretch;gap:6px;cursor:default">
+      <span class="row" style="justify-content:space-between">
+        <span class="n">${esc(nm)}</span>${bar(lv,ABIL_MAX)}
+      </span>
+      <span class="s" style="text-transform:none;letter-spacing:0;color:var(--muted)">
+        ${lv?`+${lv*9}% damage · ${lv*6}% faster to come back`:"unworked"}</span>
+      ${lv<ABIL_MAX
+        ? `<button class="btn btn--sm ${can?"btn--go":""}" ${can?`data-abil="${slot}"`:"disabled"}>${cost} essence</button>`
+        : `<span class="s" style="color:var(--good)">as sharp as it goes</span>`}
+    </div>`;
+  }).join("") : "";
+  const mt = host ? masteryTier(hid) : 0, mn = host ? masteryNext(hid) : null;
+  return `<div class="panel">
+    <div class="row" style="justify-content:space-between">
+      <div><div class="eyebrow">Essence</div>
+        <h2 class="t" style="margin-top:4px">${S.essence}</h2></div>
+      ${locked?`<span class="note" style="color:var(--flare)">Not mid-fight</span>`:""}
+    </div>
+  </div>
+  <div class="panel" style="margin-top:12px">
+    <div class="eyebrow">The vessel — carries across every body</div>
+    <div class="grid grid--wide" style="margin-top:10px">
+      ${Object.keys(VESSEL_UP).map(k=>{
+        const lv = vesselLevel(k), cost = vesselCost(k), can = lv<VESSEL_MAX && S.essence>=cost;
+        return `<div class="cardb" style="flex-direction:column;align-items:stretch;gap:6px;cursor:default">
+          <span class="row" style="justify-content:space-between">
+            <span class="n">${esc(VESSEL_UP[k].name)}</span>${bar(lv,VESSEL_MAX)}
+          </span>
+          <span class="s" style="text-transform:none;letter-spacing:0;color:var(--muted)">${esc(VESSEL_UP[k].line)}</span>
+          ${lv<VESSEL_MAX
+            ? `<button class="btn btn--sm ${can?"btn--go":""}" ${can?`data-vessel="${k}"`:"disabled"}>${cost} essence</button>`
+            : `<span class="s" style="color:var(--good)">at its limit</span>`}
+        </div>`;}).join("")}
+    </div>
+  </div>
+  ${host?`<div class="panel" style="margin-top:12px">
+    <div class="row" style="justify-content:space-between">
+      <div class="eyebrow">${esc(host.name)} — what this body can be taught</div>
+      <span class="s">MASTERY ${mt}/3 · ${masteryOf(hid)} beaten${mn?` · ${mn-masteryOf(hid)} to the next`:""}</span>
+    </div>
+    <p class="note" style="margin-top:6px">Mastery comes from use, not essence: every kill while wearing them counts, and each tier is +4% to everything they are.</p>
+    <div class="grid grid--wide" style="margin-top:10px">${abil}</div>
+  </div>`:`<p class="note" style="margin-top:12px">Take a body to work on what it can do.</p>`}`;
+}
+
+function workTab(){
+  const M = G.mission;
+  const offers = missionOffers(G.sector);
+  const sec = SECTORS[sectorIndex(G.sector)];
+  return `<div class="panel">
+    <div class="eyebrow">Work in ${esc(sec.name)}</div>
+    ${M && !M.done
+      ? `<h2 class="t" style="margin-top:6px">${esc(missionTitle(M.def))}</h2>
+         <p class="note" style="margin-top:8px">${esc(missionLine(M.def))}</p>
+         <div class="row" style="margin-top:12px">
+           <button class="btn btn--go" data-act="close">Get on with it</button>
+           <button class="btn btn--sm btn--ghost" data-act="abandon">Abandon</button>
+         </div>`
+      : `<h2 class="t" style="margin-top:6px">Three things need doing</h2>
+         <p class="note" style="margin-top:8px">Take one and a marker goes up in the world. Finishing three brings new work in.</p>`}
+    <div class="divider" style="margin:12px 0"></div>
+    <p class="note"><span class="mono">${S.missionsDone||0}</span> finished so far.</p>
+  </div>
+  ${M && !M.done ? "" : `<div class="grid grid--wide" style="margin-top:12px">
+    ${offers.map(m=>{
+      const t = BY_ID[m.targetId];
+      return `<button class="cardb" data-mission="${esc(m.id)}"
+        style="flex-direction:column;align-items:flex-start;gap:6px">
+        <span class="s" style="color:var(--gold)">${esc(MISSION_DEFS[m.kind].name)}</span>
+        <span class="n" style="font-size:13px">${esc(missionTitle(m))}</span>
+        <span class="s" style="text-transform:none;letter-spacing:0;color:var(--muted)">${esc(missionLine(m))}</span>
+        <span class="s">reward scales with T${m.tier}${t?" · "+esc(t.name):""}</span>
+      </button>`;}).join("")}
+  </div>`}`;
+}
+
 function gearTab(){
   const id = S.host;
   const host = id?BY_ID[id]:null;
@@ -4007,12 +4516,22 @@ function gearTab(){
     const pot = host?gearPotency(g,id):0;
     const ok = host && canEquip(g,id) && !locked;
     const on = host && S.loadout[id]===g.id;
-    return `<button class="cardb ${ok||on?"":"locked"}" ${ok?`data-gear="${g.id}"`:"disabled"} aria-pressed="${on}">
-      <canvas width="76" height="76" data-glyph="${esc(g.initials)}" data-col="${g.hue}"></canvas>
-      <span style="min-width:0"><span class="n">${esc(g.name)}</span><br>
-      <span class="s">${host&&canEquip(g,id)?(pot===1?"BOUND · FULL":"ECHO · "+Math.round(pot*100)+"%"):"needs "+esc(g.owner)}</span>
-      <br><span class="s" style="text-transform:none;letter-spacing:0">${esc(g.move)}</span></span>
-    </button>`;
+    const glv = gearLevel(g.id), gc = gearCost(g.id);
+    const canUp = glv < GEAR_MAX && S.essence >= gc && !locked;
+    const kills = (S.gearKills||{})[g.id]||0;
+    return `<div class="cardb ${ok||on?"":"locked"}" style="flex-direction:column;align-items:stretch;gap:6px;cursor:default">
+      <span class="row" style="gap:8px;flex-wrap:nowrap">
+        <canvas width="76" height="76" data-glyph="${esc(g.initials)}" data-col="${g.hue}"></canvas>
+        <span style="min-width:0;flex:1"><span class="n">${esc(g.name)}</span><br>
+        <span class="s">${host&&canEquip(g,id)?(pot===1?"BOUND · FULL":"ECHO · "+Math.round(pot*100)+"%"):"needs "+esc(g.owner)}</span>
+        <br><span class="s" style="text-transform:none;letter-spacing:0">${esc(g.move)}</span></span>
+      </span>
+      <span class="s" style="color:var(--gold)">RANK ${glv}/${GEAR_MAX}${S.attuned.includes(g.id)?" · ATTUNED":` · ${Math.min(kills,attuneNeeded(g.id))}/${attuneNeeded(g.id)} to attune`}</span>
+      <span class="row">
+        ${ok?`<button class="btn btn--sm ${on?"":"btn--go"}" data-gear="${g.id}">${on?"Carrying":"Carry"}</button>`:""}
+        ${glv<GEAR_MAX?`<button class="btn btn--sm" ${canUp?`data-geargrade="${g.id}"`:"disabled"}>Work it · ${gc}</button>`:`<span class="s" style="color:var(--good)">fully worked</span>`}
+      </span>
+    </div>`;
   };
   const usable = owned.filter(g=>host&&canEquip(g,id));
   const inert  = owned.filter(g=>!host||!canEquip(g,id));
@@ -4160,6 +4679,7 @@ function clearedHtml(){
   return `<div class="stack" style="max-width:640px;margin:6vh auto 0">
     <div class="eyebrow">Sector clear</div>
     <h2 class="t">${esc(SECTORS[i].name)} is yours</h2>
+    ${STORY[G.sector]?`<p class="note" style="font-style:italic;color:var(--ink);margin:10px 0;max-width:56ch">${esc(STORY[G.sector])}</p>`:""}
     <p class="note">${S.unlocked.length} hosts reached · ${S.gearOwned.length} pieces of gear · ${S.aiOwned.length} minds · ${S.essence} essence.</p>
     <div class="row">
       ${nxt?`<button class="btn btn--go" data-sector="${nxt.id}">Move on to ${esc(nxt.name)}</button>`:`<p class="note">There is nothing above this one.</p>`}
@@ -4183,7 +4703,7 @@ function downHtml(){
 }
 /* ---------------------------------------------------------------- actions */
 SCREENS.addEventListener("click", ev=>{
-  const t = ev.target.closest("[data-act],[data-tab],[data-become],[data-gear],[data-ai],[data-sector],[data-start],[data-cat],[data-quality]");
+  const t = ev.target.closest("[data-act],[data-tab],[data-become],[data-gear],[data-ai],[data-sector],[data-start],[data-cat],[data-quality],[data-mission],[data-abil],[data-vessel],[data-geargrade]");
   if(!t) return;
   const d = t.dataset;
 
@@ -4199,6 +4719,15 @@ SCREENS.addEventListener("click", ev=>{
   }
   if(d.act==="continue"){ enterSector(S.sector||"hk"); closeScreen(); return; }
   if(d.act==="close"){ closeScreen(); return; }
+  if(d.act==="abandon"){ abandonMission(); openScreen("pause"); return; }
+  if(d.abil){ upgradeAbility(S.host, d.abil); openScreen("pause"); return; }
+  if(d.vessel){ upgradeVessel(d.vessel); openScreen("pause"); return; }
+  if(d.geargrade){ upgradeGear(d.geargrade); openScreen("pause"); return; }
+  if(d.mission){
+    const m = missionOffers(G.sector).find(x=>x.id===d.mission);
+    if(m){ startMission(m); closeScreen(); }
+    return;
+  }
   if(d.act==="revive"){ reviveHost(); closeScreen(); return; }
   if(d.act==="more"){ cx.cap += 200; openScreen("pause"); return; }
   if(d.act==="more-bodies"){ bx.cap += 200; openScreen("pause"); return; }
@@ -4287,6 +4816,7 @@ function enterSector(id){
   G.ents = []; G.projs = []; G.parts = []; G.pops = []; G.beams = [];
   G.rings = []; G.arcs = []; G.orbits = []; G.drops = [];
   G.bossEnt = null; G.surge = 0; G.combo = 0; G.ended = false; G.spawnT = 900;
+  G.mission = null; G.lockTarget = null; G.freeze = 0; G.lastCombat = -1e9;
   buildHost();
   G.camYaw = 0; G.camPitch = 0.26;
   for(let i=0;i<5;i++) spawnWanderer();
