@@ -123,6 +123,19 @@ top, announced above their head before they reach you, with a coloured ring unde
 They cost you more and they are worth more — up to 2.2× the essence. The first time you
 meet each role, the feed tells you what it is and what to do about it, once.
 
+## The hour of the day
+
+The clock turns over every eight minutes, and it is a real cycle, not a tint. At noon the
+sky is a sky, the office windows are dark, the haze thins out and the sun rakes across the
+street from one side — it never stands directly overhead, because a light with no direction
+flattens a city. Towards evening the shadows lengthen, the windows come on one by one and
+the street starts lighting itself. After dark a moon takes the sun's place from the other
+side, so night still has a direction, a shape and a shadow behind you.
+
+Each sector's palette is written as its *night*; daylight is that same palette lifted to a
+daylight level, so a place keeps its own colour through the whole day. Rain thickens the
+air, dims the sun and wets the asphalt.
+
 ## Sound
 
 Sixteen sounds, all synthesised at the moment they play — impacts, a bright chime for a

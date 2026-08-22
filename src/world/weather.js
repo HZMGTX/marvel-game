@@ -4,28 +4,64 @@
 
 /* ------------------------------------------------------------- sky and rain */
 const DAY_LEN = 480000;                    /* eight minutes for a full turn */
+/* A sector's authored palette is its night. Daylight is that same palette
+   lifted to a daylight level — the hue is kept, the level is not — so Hell's
+   Kitchen at noon is still Hell's Kitchen, and still bright. */
+const _lift = [0,0,0];
+function liftHue(c, level, out){
+  const m = (c[0] + c[1] + c[2])/3 || 1e-4, k = level/m;
+  out[0] = c[0]*k; out[1] = c[1]*k; out[2] = c[2]*k;
+  return out;
+}
+const NIGHT_SKY = [0.020,0.030,0.080], NIGHT_TOP = [0.010,0.012,0.042],
+      NIGHT_FOG = [0.030,0.040,0.090], NIGHT_AMB = [0.160,0.190,0.320],
+      NIGHT_GRD = [0.090,0.080,0.090], NIGHT_SUN = [0.400,0.460,0.700];
+/* A city is never actually dark: sodium and shopfronts come up from the street.
+   This is the floor under everything, so a shadow at dusk still reads. */
+const CITY_GLOW = [0.075,0.062,0.050];
+
 function applyDayNight(){
   const w = G.world; if(!w || !w.base) return;
   const t = (G.timeOfDay = ((G.timeOfDay||0.28) + (G.paused?0:0)) );
   const ang = t * 6.28318;
-  SUN[0] = Math.cos(ang)*0.55; SUN[1] = Math.sin(ang); SUN[2] = 0.34;
+  const sy = Math.sin(ang);                             /* where the sun really is */
+  const up = Math.max(0, sy);                           /* and how high, 0 to 1 */
+  /* the light never comes from straight overhead: a noon sun with no direction
+     flattens the whole city, so the highest it ever gets is about sixty degrees
+     and it keeps travelling sideways all day */
+  const dn = Math.max(0, -sy);                          /* how deep the night is */
+  const cx = Math.cos(ang)*0.78;
+  if(sy > 0){ SUN[0] =  cx; SUN[1] = 0.30 + up*0.38; SUN[2] =  0.50; }
+  else      { SUN[0] = -cx; SUN[1] = 0.26 + dn*0.32; SUN[2] = -0.50; }   /* the moon */
   const l = Math.hypot(SUN[0],SUN[1],SUN[2]) || 1;
   SUN[0]/=l; SUN[1]/=l; SUN[2]/=l;
-  const up = Math.max(0, SUN[1]);                       /* how high the sun is */
   const night = 1 - Math.min(1, up*3.2);
   const warm = Math.max(0, 1 - Math.abs(up-0.13)*5);    /* low sun, warm light */
+  const day = Math.min(1, Math.max(0, (up - 0.10)/0.55));   /* full daylight by mid-morning */
+  const dim = 1 - Math.min(1, up*1.8);                      /* how much the city lights itself */
   const b = w.base;
+  w.night = night;
+  /* a clear day sees a long way; the murk belongs to dusk and to rain */
+  w.fogD = w.base.fogD * (1 - 0.55*day) * (G.weather === "rain" ? 1.5 : 1);
+  const skyD = liftHue(b.sky,    0.44, [0,0,0]);
+  const topD = liftHue(b.skyTop, 0.24, [0,0,0]);
+  const fogD = liftHue(b.fog,    0.20, [0,0,0]);
+  const ambD = liftHue(b.skyAmb, 0.30, [0,0,0]);
+  const grdD = liftHue(b.grdAmb, 0.16, [0,0,0]);
   for(let i=0;i<3;i++){
-    const dayC = b.sun[i] * (0.25 + up*0.95);
+    const dayC = b.sun[i] * (0.24 + up*1.00);
     const warmTint = [1.28, 0.86, 0.55][i];
-    const nightC = [0.16, 0.20, 0.38][i];
     w.sunCol[i] = dayC*(1-warm) + b.sun[i]*warmTint*0.9*warm;
-    w.sunCol[i] = w.sunCol[i]*(1-night) + nightC*night;
-    w.skyAmb[i] = b.skyAmb[i]*(0.30 + up*0.85)*(1-night) + [0.06,0.08,0.16][i]*night;
-    w.grdAmb[i] = b.grdAmb[i]*(0.35 + up*0.75)*(1-night) + [0.03,0.03,0.05][i]*night;
-    w.sky[i]    = b.sky[i]*(0.22 + up*1.0)*(1-night)   + [0.02,0.03,0.08][i]*night;
-    w.skyTop[i] = b.skyTop[i]*(0.22 + up*1.0)*(1-night)+ [0.01,0.01,0.04][i]*night;
-    w.fog[i]    = b.fog[i]*(0.28 + up*0.9)*(1-night)   + [0.03,0.04,0.09][i]*night;
+    w.sunCol[i] = w.sunCol[i]*(1-night) + NIGHT_SUN[i]*night;
+    const mix = (dusk, noon, nite) => (dusk*(1-day) + noon*day)*(1-night) + nite*night;
+    /* the sky goes out on the `night` curve, but the city starts lighting itself
+       long before that — otherwise late afternoon is darker than midnight */
+    const amb = (dusk, noon, nite) => (dusk*(1-day) + noon*day)*(1-dim) + nite*dim;
+    w.skyAmb[i] = amb(b.skyAmb[i]*(0.30 + up*0.55), ambD[i], NIGHT_AMB[i]);
+    w.grdAmb[i] = amb(b.grdAmb[i]*(0.35 + up*0.45), grdD[i], NIGHT_GRD[i]) + CITY_GLOW[i]*dim;
+    w.sky[i]    = mix(b.sky[i]*(0.22 + up*1.0),     skyD[i], NIGHT_SKY[i]);
+    w.skyTop[i] = mix(b.skyTop[i]*(0.22 + up*1.0),  topD[i], NIGHT_TOP[i]);
+    w.fog[i]    = mix(b.fog[i]*(0.28 + up*0.9),     fogD[i], NIGHT_FOG[i]);
   }
   if(G.weather === "rain"){
     for(let i=0;i<3;i++){ w.sunCol[i] *= 0.55; w.skyAmb[i] *= 0.85; w.fog[i] *= 1.15; }

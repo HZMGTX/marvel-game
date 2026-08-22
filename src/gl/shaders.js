@@ -33,7 +33,7 @@ precision highp float;
 varying vec3 vW, vN;
 varying vec4 vLS;
 uniform vec3 uAlb, uCam, uSunDir, uSunCol, uSkyCol, uGrdCol, uFogCol, uAccent;
-uniform float uRough, uMetal, uEmis, uAlpha, uFogD, uTonemap, uShadowOn, uTexel, uTime;
+uniform float uRough, uMetal, uEmis, uAlpha, uFogD, uTonemap, uShadowOn, uTexel, uTime, uNight;
 uniform int uKind;
 uniform sampler2D uShadow;
 ` + COMMON_NOISE + `
@@ -88,8 +88,8 @@ void main(){
       float frameX = step(0.16, f.x) * step(f.x, 0.84);
       float frameY = step(0.20, f.y) * step(f.y, 0.78);
       float win = frameX * frameY;
-      float lit = step(0.58, r);
-      vec3 glass = mix(vec3(0.02,0.025,0.05), uAccent*1.4, lit);
+      float lit = step(0.58, r) * uNight;    /* nobody leaves the lights on at noon */
+      vec3 glass = mix(vec3(0.03,0.035,0.06), uAccent*1.4, lit);
       alb = mix(alb * (0.86 + 0.14*h21(cell*1.7)), glass, win);
       emis += win * lit * (0.55 + 0.45*h21(cell*3.1));
       rough = mix(0.85, 0.12, win);
@@ -136,7 +136,9 @@ void main(){
   vec3 specCol = mix(vec3(0.055), alb, metal);
   float specK = (uKind == 1) ? 0.10 : 1.0;
   vec3 specular = specCol * spec * sh * uSunCol * (1.0 - rough*0.8) * 1.7 * specK;
-  vec3 rim = uSkyCol * fres * 0.42 * (1.0 - metal*0.4);
+  /* a rough surface has no mirror in it: without this the ground picks up a
+     grazing sky wash all the way to the horizon and the city goes flat */
+  vec3 rim = uSkyCol * fres * 0.42 * (1.0 - metal*0.4) * (1.0 - rough*0.85);
 
   vec3 col = diffuse + specular + rim + alb*emis*1.9;
 

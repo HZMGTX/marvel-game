@@ -118,7 +118,7 @@ function buildWorld(sectorId){
   };
   /* keep the untouched palette so the day/night pass has something to work from */
   w.base = {sun:th.sun.slice(), skyAmb:th.skyAmb.slice(), grdAmb:th.grdAmb.slice(),
-            sky:srgb(th.sky), skyTop:srgb(th.top), fog:srgb(th.fog)};
+            sky:srgb(th.sky), skyTop:srgb(th.top), fog:srgb(th.fog), fogD:th.fogD};
   return w;
 }
 

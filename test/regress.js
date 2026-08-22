@@ -97,9 +97,25 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
     G.civT = 0; G.paused = false;
     for(let i=0;i<8;i++){ G.civT = 0; update(16); }
     o.civsReturn = G.ents.filter(e=>e.team==="civ" && !e.dead).length > 0;
-    o.dayNight = (()=>{ G.timeOfDay=0.25; applyDayNight(); const n=G.world.sunCol.reduce((a,c)=>a+c,0);
-                        G.timeOfDay=0.75; applyDayNight(); const d=G.world.sunCol.reduce((a,c)=>a+c,0);
-                        G.timeOfDay=0.30; applyDayNight(); return d < n; })();
+    o.dayNight = (()=>{
+      const sum = a2 => a2.reduce((x,c)=>x+c, 0);
+      G.timeOfDay = 0.25; applyDayNight();
+      const noon = {sun:sum(G.world.sunCol), sky:sum(G.world.sky), night:G.world.night,
+                    fogD:G.world.fogD, sunY:SUN[1]};
+      G.timeOfDay = 0.75; applyDayNight();
+      const dark = {sun:sum(G.world.sunCol), sky:sum(G.world.sky), night:G.world.night,
+                    fogD:G.world.fogD, sunY:SUN[1]};
+      G.timeOfDay = 0.30; applyDayNight();
+      o.dayLighting = {
+        dimmer:   dark.sun < noon.sun,                 /* night is darker */
+        skyLifts: noon.sky > dark.sky*3,               /* and the sky is a real sky by day */
+        windows:  noon.night < 0.05 && dark.night > 0.95,  /* lights off at noon, on at night */
+        clearer:  noon.fogD < dark.fogD,               /* a clear day sees further */
+        offZenith: noon.sunY < 0.85 && noon.sunY > 0.2,    /* the sun never stands overhead */
+        moonlit:  dark.sunY > 0                        /* and night keeps a light of its own */
+      };
+      return Object.values(o.dayLighting).every(Boolean);
+    })();
 
     // elites: six roles, each doing the one thing it says it does
     (()=>{
@@ -257,7 +273,7 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   ok("boss phase fires", r.bossPhase);
   ok("city populated", r.city.cars>0 && r.city.civs>0 && r.city.props>0, JSON.stringify(r.city));
   ok("civilians replenish", r.civsReturn);
-  ok("night darker than noon", r.dayNight);
+  ok("a day that is actually a day", r.dayNight, JSON.stringify(r.dayLighting));
   ok("six elite roles", r.eliteRoles);
   ok("every role reshapes its host", r.eliteApplies);
   ok("warden hardens the room", r.eliteWarden);

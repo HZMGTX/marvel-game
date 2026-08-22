@@ -72,6 +72,7 @@ function renderScene(){
   gl.uniform3fv(U.uFogCol, G.world.fog);
   gl.uniform1f(U.uFogD, G.world.fogD);
   gl.uniform1f(U.uTime, G.t*0.001);
+  gl.uniform1f(U.uNight, G.world.night === undefined ? 1 : G.world.night);
   gl.uniform1f(U.uTonemap, toScreen ? 1 : 0);
   gl.uniform1f(U.uShadowOn, shadowOn);
   if(SHADOW){
