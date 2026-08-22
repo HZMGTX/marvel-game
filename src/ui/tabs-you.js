@@ -83,7 +83,9 @@ function powerTab(){
         <span class="n">${esc(nm)}</span>${bar(lv,ABIL_MAX)}
       </span>
       <span class="s" style="text-transform:none;letter-spacing:0;color:var(--muted)">
-        ${lv?`+${lv*9}% damage · ${lv*6}% faster to come back`:"unworked"}</span>
+        ${lv ? `Now +${lv*9}% damage and ${lv*6}% faster to come back.`
+             : "Nothing has been done to this one yet."}
+        ${lv < ABIL_MAX ? "A rank adds 9% damage and takes 6% off the wait." : ""}</span>
       ${lv<ABIL_MAX
         ? `<button class="btn btn--sm ${can?"btn--go":""}" ${can?`data-abil="${slot}"`:"disabled"}>${cost} essence</button>`
         : `<span class="s" style="color:var(--good)">as sharp as it goes</span>`}

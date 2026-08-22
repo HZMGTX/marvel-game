@@ -481,6 +481,22 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
       zero(); G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9;
     })();
 
+    /* the controls card is the first thing a new player reads and the only
+       thing they can consult later; it must not describe a game we stopped
+       making. It told people to press 1/2/3 to swap body mid-fight for hours
+       after that became the one thing you cannot do. */
+    (()=>{
+      const c = controlsHtml();
+      o.controls = {
+        become:  /BECOME/.test(c) && /<b>B<\/b>/.test(c),
+        theRule: /cannot/i.test(c) && /six seconds/.test(c),
+        stale:   /1 2 3/.test(c) || /as often as you like/i.test(c),
+        dive:    /dive/i.test(c),
+        roles:   /WARDEN/.test(c) && /HERALD/.test(c),
+        mind:    /artificial mind/i.test(c)
+      };
+    })();
+
     // the story reaches every sector, and the last one ends it
     (()=>{
       o.storySilent = SECTORS.filter(s2=>!STORY[s2.id]).map(s2=>s2.id);
@@ -619,6 +635,10 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   ok("a small hop does not", r.softLanding);
   ok("the air readout reads", r.flyHud && r.flyHudHides);
   ok("audio ready", r.sound);
+  ok("the controls card describes this game",
+     r.controls.become && r.controls.theRule && !r.controls.stale
+     && r.controls.dive && r.controls.roles && r.controls.mind,
+     JSON.stringify(r.controls));
   ok("every sector has something to say", r.storySilent.length===0, r.storySilent.join(","));
   ok("bosses greet you by name where written", r.bossLines);
   ok("the spark counts what it has worn out", r.tally);

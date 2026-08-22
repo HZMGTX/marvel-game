@@ -41,11 +41,14 @@ function controlsHtml(){
     <div><h3>Guard and parry</h3><p class="note">Hold <b>F</b> or the right mouse button (GUARD on a phone) to block what you are facing — most of the damage stops, and it drains energy. A hit that arrives in the first quarter-second of a guard is a <b>parry</b>: it staggers whoever threw it and hands it back.</p></div>
     <div><h3>Roll</h3><p class="note"><b>Shift</b> (ROLL on a phone) if the body you are wearing cannot fly. Three hundred milliseconds of nothing touching you. Enemies wind up before anything heavy — that flare around their feet is your cue.</p></div>
     <div><h3>Lock on</h3><p class="note"><b>T</b> or the LOCK button keeps the camera on the nearest enemy.</p></div>
-    <div><h3>Jump and fly</h3><p class="note"><b>Space</b> jumps — you can land on the rooftops. <b>Shift</b> (or the FLY button) leaves the ground entirely, if the body you are wearing can. Hold Space to climb, Ctrl to drop.</p></div>
-    <div><h3>Change body</h3><p class="note"><b>1 2 3</b> or tap a portrait. Instant, mid-fight, as often as you like. Health is tracked per body.</p></div>
+    <div><h3>Jump and fly</h3><p class="note"><b>Space</b> jumps — you can land on the rooftops. <b>Shift</b> (or the FLY button) leaves the ground entirely, if the body you are wearing can. Hold <b>Space</b> to climb and <b>Ctrl</b> to dive: a dive builds real speed, and levelling out at the bottom spends it forward.</p></div>
+    <div><h3>Coming down</h3><p class="note">Land hard — off a dive, or off a roof — and you arrive on a shockwave that knocks people over, wrecks cars and flattens the street. Dive into somebody instead of into the road and they take it in the chest. Height is not a hiding place, though: they aim up, they jump, and they throw things.</p></div>
+    <div><h3>Change body</h3><p class="note"><b>B</b> or the BECOME button opens everyone you have beaten. Out of a fight you can take any of them and health comes back full. In one you cannot: the choice locks until six seconds after the last hit. Break away first.</p></div>
     <div><h3>Surge</h3><p class="note"><b>Q</b> when the gold bar fills. Clears everything hurting you and hits 60% harder for five seconds.</p></div>
     <div><h3>Menu</h3><p class="note"><b>Esc</b> or the &#9776; button — hosts, gear, minds, sectors and the codex.</p></div>
     <div><h3>Gear on the ground</h3><p class="note">Beat someone carrying something and it drops where they fell. Walk over it to take it.</p></div>
+    <div><h3>The ones with a word over them</h3><p class="note">Some of them carry a role — WARDEN, STALKER, BREAKER, MARKSMAN, LEECH, HERALD — announced above their head before they reach you, with a coloured ring under their feet. Each does one thing, and the feed tells you what beats it the first time you meet one.</p></div>
+    <div><h3>The mind you carry</h3><p class="note">An artificial mind rides in you rather than in the body, so it follows you through every change. The line under your health bars says which effect you have, and lights up the moment it steps in.</p></div>
   </div>`;
 }
 

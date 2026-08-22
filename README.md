@@ -55,7 +55,7 @@ already running. Finish three and new work comes in.
 | Guard / parry | hold `F` or right mouse | GUARD |
 | Roll | `Shift` (if you can't fly) | ROLL |
 | Lock on | `T` | LOCK |
-| Change body | `B` | the portrait |
+| Change body | `B` | BECOME |
 | Menu | `Esc` | ☰ |
 
 Scroll to pull the camera in or out. Jump onto the rooftops — they are solid.
@@ -249,7 +249,7 @@ npm i playwright
 node test/regress.js
 ```
 
-It exits non-zero on any failure. Seventy-six checks, currently all passing — the last four
+It exits non-zero on any failure. Seventy-seven checks, currently all passing — the last four
 of them in a real 390×844 touch context, checking that the phone build comes up, that nothing
 on its HUD collides or runs off the edge, and that a quick tap fires an ability. Point it at a
 different build with `GAME_URL` — the bundle in `dist/` has to pass exactly the same set.
