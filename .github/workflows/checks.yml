@@ -1,0 +1,53 @@
+# The regression harness drives the real game in a real browser. It only ever
+# ran when somebody remembered to run it; now it runs on every push.
+name: checks
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  regress:
+    name: 77 checks, in a real browser
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Get a browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Syntax-check every source file
+        run: |
+          for f in $(git ls-files 'src/**/*.js' 'test/*.js' 'tools/*.js'); do
+            node --check "$f" || exit 1
+          done
+
+      - name: Fold it into one file
+        run: node tools/bundle.js
+
+      - name: Drive the split build
+        run: node test/regress.js
+
+      - name: Drive the single-file bundle
+        run: node test/regress.js
+        env:
+          GAME_URL: file://${{ github.workspace }}/dist/multiverse-vessel.html
+
+      - name: Keep the bundle if anything failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: multiverse-vessel
+          path: dist/multiverse-vessel.html
+          if-no-files-found: ignore

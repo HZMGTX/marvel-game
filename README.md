@@ -245,9 +245,14 @@ stays bound to its owner, that missions start and abandon, that ranks buy, that 
 turn, that the city stays populated, and that the save round-trips.
 
 ```
-npm i playwright
+npm ci
+npx playwright install chromium
 node test/regress.js
 ```
+
+It also runs itself. `.github/workflows/checks.yml` syntax-checks all 46 source
+files, folds the bundle, and drives both builds through the whole harness on
+every push — so a change that breaks the game cannot sit unnoticed in a branch.
 
 It exits non-zero on any failure. Seventy-seven checks, currently all passing — the last four
 of them in a real 390×844 touch context, checking that the phone build comes up, that nothing
