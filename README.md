@@ -115,6 +115,21 @@ because that is the rule browsers hold you to, and there is an on/off switch in 
 - **Quality**: High / Medium / Low in the Rules tab. Low turns off shadows and bloom.
   Progress saves to your browser; there is a save code in the same tab.
 
+## Checking it still works
+
+`test/regress.js` drives the real game in a real browser and asserts from page state, not
+from screenshots — that the world comes up, that all 616 beings build, that a body cannot
+be changed mid-fight, that guarding, parrying and rolling do what they claim, that gear
+stays bound to its owner, that missions start and abandon, that ranks buy, that bosses
+turn, that the city stays populated, and that the save round-trips.
+
+```
+npm i playwright
+node test/regress.js
+```
+
+It exits non-zero on any failure. Twenty-one checks, currently all passing.
+
 ## Unofficial fan project
 
 Not affiliated with, endorsed by, or produced by Marvel or The Walt Disney Company. All
