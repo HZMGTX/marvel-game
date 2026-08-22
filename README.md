@@ -81,6 +81,14 @@ Essence buys four things, and none of it can be done mid-fight:
 - **Mastery** costs nothing but use: every kill while wearing a body counts, and 25 / 75 /
   150 each add +4% to everything they are.
 
+## The city
+
+A 608-metre grid of streets and blocks with traffic running the roads, people on the
+pavement who scatter when a fight starts, street lamps and cars you can wreck, and
+buildings that stand on pillars so you can walk in under them. The sun goes round on an
+eight-minute cycle — dawn, noon, dusk, night with the windows lit — and it rains about
+a third of the time.
+
 ## Under the hood
 
 - **Renderer**: hand-written WebGL. Sun with a real shadow map (packed depth, 3×3 PCF),

@@ -1948,7 +1948,7 @@ const SECTOR_THEME = {
   musp:"hell",hel:"ice",quant:"space",nz:"space",sak:"city",know:"space",xan:"space",
   hala:"tech",tarnax:"tech",titan:"space",oly:"palace",bw:"city",tva:"lab",bleed:"space",above:"space"
 };
-const WORLD = 380, BLOCK = 76, STREET = 22;
+const WORLD = 608, BLOCK = 76, STREET = 22;
 
 function mulberry(seed){
   let a = seed>>>0;
@@ -1971,7 +1971,9 @@ function buildWorld(sectorId){
     const place = (x,z,w,d)=>{
       if(w < 5 || d < 5) return;
       const h = 8 + rng()*rng()*46 + (rng()<0.08 ? 34 : 0);
-      boxes.push({x:x+w/2, z:z+d/2, w, d, h, col:bldLin[(rng()*bldLin.length)|0]});
+      const open = rng() < 0.16 && w > 14 && d > 14;   /* a colonnade you can walk into */
+      boxes.push({x:x+w/2, z:z+d/2, w, d, h, base: open ? 4.2 : 0,
+                  col:bldLin[(rng()*bldLin.length)|0]});
     };
     const pieces = 2 + Math.floor(rng()*3);
     if(pieces<=2){
@@ -1988,15 +1990,20 @@ function buildWorld(sectorId){
       props.push({x:ox-STREET*0.42+rng()*3-1.5, z:oz+rng()*bd, k:th.prop, s:0.8+rng()*0.6,
                   col:srgb(th.accent)});
   }
-  for(let i=0;i<260;i++){
+  for(let i=0;i<520;i++){
     const x = -WORLD/2+8 + rng()*(WORLD-16), z = -WORLD/2+8 + rng()*(WORLD-16);
     if(!boxes.some(b=> Math.abs(x-b.x)<b.w/2+2.5 && Math.abs(z-b.z)<b.d/2+2.5)) spawns.push({x,z});
   }
-  return {
+  const w = {
     th, boxes, props, spawns, cx:0, cz:0,
-    ground:srgb(th.ground), fog:srgb(th.fog), sky:srgb(th.sky), skyTop:srgb(th.top),
-    accent:srgb(th.accent), fogD:th.fogD, sunCol:th.sun, skyAmb:th.skyAmb, grdAmb:th.grdAmb
+    ground:srgb(th.ground), fog:srgb(th.fog).slice(), sky:srgb(th.sky).slice(),
+    skyTop:srgb(th.top).slice(), accent:srgb(th.accent), fogD:th.fogD,
+    sunCol:th.sun.slice(), skyAmb:th.skyAmb.slice(), grdAmb:th.grdAmb.slice()
   };
+  /* keep the untouched palette so the day/night pass has something to work from */
+  w.base = {sun:th.sun.slice(), skyAmb:th.skyAmb.slice(), grdAmb:th.grdAmb.slice(),
+            sky:srgb(th.sky), skyTop:srgb(th.top), fog:srgb(th.fog)};
+  return w;
 }
 
 /* how high the ground is at a point — rooftops count */
@@ -2005,6 +2012,7 @@ function groundAt(x,z,r){
   const boxes = G.world.boxes;
   for(let i=0;i<boxes.length;i++){
     const b = boxes[i];
+    if(b.base) continue;                    /* open ground floor — nothing to stand on */
     if(b.h > top && Math.abs(x-b.x) < b.w/2 - (r||0)*0.2 && Math.abs(z-b.z) < b.d/2 - (r||0)*0.2) top = b.h;
   }
   return top;
@@ -2014,6 +2022,7 @@ function resolveXZ(e){
   const r = e.rad;
   for(const b of G.world.boxes){
     if(e.y >= b.h - 0.25) continue;
+    if(b.base && e.y < b.base - 0.4) continue;   /* walk in under the pillars */
     const dx = e.x - b.x, dz = e.z - b.z;
     const px = b.w/2 + r - Math.abs(dx), pz = b.d/2 + r - Math.abs(dz);
     if(px > 0 && pz > 0){
@@ -2373,7 +2382,7 @@ function drawChar(e, camDist){
   const pal = e.pal;
   const t = G.t;
   const hurt = (t - e.hitT) < 140;
-  const far = camDist > 46;
+  const far = camDist > 30;
   const speed = Math.hypot(e.vx, e.vz);
   e.animT += speed * 0.012 + 0.0006;
   const ph = e.animT * 2.2;
@@ -2735,7 +2744,8 @@ function useAbility(e, slot){
   switch(a.kind){
     case "swipe": {
       const reach = reachOf(a) + e.rad;
-      coneHit(e, reach, a.arc, a.mul, o);
+      coneHit(e, reach, a.arc, mul, o);
+      splashCars(e, e.x + f.x*reach*0.7, e.z + f.z*reach*0.7, reach*0.6);
       G.arcs.push({e, r:reach, t:0, life:180, c:e.pal.c3, yaw:e.yaw});
       break;
     }
@@ -2746,14 +2756,16 @@ function useAbility(e, slot){
     case "beam": {
       const len = a.len*U_LEN, wid = a.wid*U_WID;
       G.beams.push({x:e.x, y:e.y+e.height*0.62, z:e.z, yaw:e.yaw, len, wid, c:e.pal.c3, t:0, life:210});
-      rayHit(e, len, wid, a.mul, o);
+      rayHit(e, len, wid, mul, o);
+      for(let s2=0;s2<4;s2++) splashCars(e, e.x+f.x*len*(s2+1)/4, e.z+f.z*len*(s2+1)/4, wid);
       G.shake += .22;
       break;
     }
     case "slam": {
       const R = a.radius*U_RADIUS;
       shock(e.x, e.y+0.3, e.z, R, e.pal.c3, 420);
-      sphereHit(e, e.x, e.y, e.z, R, a.mul, o);
+      sphereHit(e, e.x, e.y, e.z, R, mul, o);
+      splashCars(e, e.x, e.z, R);
       burst(e.x, e.y+0.6, e.z, 22, e.pal.c3);
       G.shake += Math.min(.85, R/16);
       break;
@@ -2848,7 +2860,7 @@ function nearestFoe(e, maxd){
 /* ------------------------------------------------------------ game state */
 const G = {
   world:null, sector:"hk", ents:[], projs:[], parts:[], pops:[], beams:[], rings:[], arcs:[],
-  orbits:[], drops:[], player:null, mission:null,
+  orbits:[], drops:[], player:null, mission:null, cars:[], rain:[], weather:"clear", timeOfDay:0.28,
   camYaw:0, camPitch:0.26, camDist:6.4, shake:0,
   t:0, last:0, surge:0, combo:0, comboT:0, spawnT:0, bossEnt:null, lastCombat:-1e9,
   freeze:0, lockTarget:null,
@@ -3204,6 +3216,7 @@ function update(dt){
     const e = G.ents[i];
     if(e.dead && now()-e.deadT > 1000 && e!==G.player) G.ents.splice(i,1);
   }
+  updateCars(dt); updateRain(dt); stepSky(dt);
   updateMission(dt);
   if(G.combo && now()>G.comboT) G.combo = 0;
   G.shake *= Math.pow(0.0018, dts);
@@ -3489,6 +3502,189 @@ const STORY = {
   above:"They have all been watching. The question was never whether you could. It was whether you would stop."
 };
 
+/* ==========================================================================
+   A CITY THAT IS DOING SOMETHING WHEN YOU ARE NOT
+   Traffic on the roads, people on the pavement, weather overhead, and a sun
+   that actually goes round.
+   ========================================================================== */
+
+/* ------------------------------------------------------------------ cars */
+const CAR_COLS = ["#B4342C","#2C4C8A","#D8D2C4","#2A2A32","#6E7480","#1F6B4C","#C08A2A"];
+function laneLines(){                     /* world coords of every street centre-line */
+  const out = [];
+  for(let k = -Math.floor(WORLD/2/BLOCK); k <= Math.floor(WORLD/2/BLOCK); k++) out.push(k*BLOCK - WORLD/2 + BLOCK/2*0);
+  return out;
+}
+function spawnTraffic(n){
+  G.cars = [];
+  const lines = [];
+  for(let v = -WORLD/2; v <= WORLD/2 + 1; v += BLOCK) lines.push(v);
+  for(let i=0;i<n;i++){
+    const axis = Math.random() < 0.5 ? 0 : 1;          /* 0 drives along x, 1 along z */
+    const line = lines[(Math.random()*lines.length)|0];
+    const back = Math.random() < 0.5;
+    const lane = (back ? 3.2 : -3.2);
+    const along = -WORLD/2 + Math.random()*WORLD;
+    G.cars.push({
+      axis, back, hp: 120, dead:false, t:0,
+      x: axis ? line + lane : along,
+      z: axis ? along : line + lane,
+      spd: (7 + Math.random()*7) * (back ? -1 : 1),
+      col: srgb(CAR_COLS[(Math.random()*CAR_COLS.length)|0]),
+      len: 4.1 + Math.random()*1.2
+    });
+  }
+}
+function updateCars(dt){
+  const dts = dt/1000, p = G.player;
+  for(let i=G.cars.length-1;i>=0;i--){
+    const c = G.cars[i];
+    if(c.dead){ c.t += dt; if(c.t > 6000) G.cars.splice(i,1); continue; }
+    let v = c.spd;
+    /* they will not run you over — they stop, and then they lean on the horn */
+    if(p && !p.fly && Math.abs(p.y) < 2){
+      const dx = p.x - c.x, dz = p.z - c.z;
+      const ahead = c.axis ? dz*Math.sign(c.spd) : dx*Math.sign(c.spd);
+      const side  = c.axis ? Math.abs(dx - 0) : Math.abs(dz - 0);
+      if(ahead > 0 && ahead < 9 && Math.hypot(dx,dz) < 10) v = 0;
+    }
+    if(c.axis) c.z += v*dts; else c.x += v*dts;
+    const lim = WORLD/2 + 8;
+    if(c.x > lim) c.x = -lim; if(c.x < -lim) c.x = lim;
+    if(c.z > lim) c.z = -lim; if(c.z < -lim) c.z = lim;
+  }
+}
+/* anything that lands near a car wrecks it */
+function splashCars(att, x, z, r){
+  if(att.team !== "you") return;
+  for(const c of G.cars){
+    if(c.dead) continue;
+    if(Math.hypot(c.x-x, c.z-z) > r + 2.4) continue;
+    c.hp -= 60;
+    spark(c.x, 1.2, c.z, 8, SPARK_A);
+    if(c.hp <= 0){
+      c.dead = true; c.t = 0;
+      burst(c.x, 1.4, c.z, 34, srgb("#FF8A3D"));
+      shock(c.x, 0.4, c.z, 4.5, srgb("#FF8A3D"), 620);
+      G.shake += 0.55; G.freeze = Math.max(G.freeze, 55);
+      G.pops.push({x:c.x, y:2.6, z:c.z, txt:"WRECKED", t:0, life:900, col:"#FF8A3D", size:15});
+    }
+  }
+  for(const pr of G.world.props){
+    if(pr.fallen) continue;
+    if(Math.hypot(pr.x-x, pr.z-z) > r + 2) continue;
+    pr.fallen = true; pr.fallDir = Math.random()*6.283;
+    spark(pr.x, 2, pr.z, 6, SPARK_B);
+  }
+}
+
+/* ------------------------------------------------------- people, wandering */
+function spawnAmbientCivs(n){
+  const pool = BEINGS.filter(b=>b.tags.includes("civilian"));
+  for(let i=0;i<n;i++){
+    const s = pickSpawn(G.player, 20, 140);
+    const cb = pool[(Math.random()*pool.length)|0];
+    if(!cb) return;
+    const c = makeEnt(cb.id, s.x, s.z, "civ", {});
+    c.civ = true; c.ambient = true;
+    c.civName = CIVILIAN_NAMES[(Math.random()*CIVILIAN_NAMES.length)|0];
+    c.maxHp = 100; c.hp = 100;
+    G.ents.push(c);
+  }
+}
+
+/* ------------------------------------------------------------- sky and rain */
+const DAY_LEN = 480000;                    /* eight minutes for a full turn */
+function applyDayNight(){
+  const w = G.world; if(!w || !w.base) return;
+  const t = (G.timeOfDay = ((G.timeOfDay||0.28) + (G.paused?0:0)) );
+  const ang = t * 6.28318;
+  SUN[0] = Math.cos(ang)*0.55; SUN[1] = Math.sin(ang); SUN[2] = 0.34;
+  const l = Math.hypot(SUN[0],SUN[1],SUN[2]) || 1;
+  SUN[0]/=l; SUN[1]/=l; SUN[2]/=l;
+  const up = Math.max(0, SUN[1]);                       /* how high the sun is */
+  const night = 1 - Math.min(1, up*3.2);
+  const warm = Math.max(0, 1 - Math.abs(up-0.13)*5);    /* low sun, warm light */
+  const b = w.base;
+  for(let i=0;i<3;i++){
+    const dayC = b.sun[i] * (0.25 + up*0.95);
+    const warmTint = [1.28, 0.86, 0.55][i];
+    const nightC = [0.16, 0.20, 0.38][i];
+    w.sunCol[i] = dayC*(1-warm) + b.sun[i]*warmTint*0.9*warm;
+    w.sunCol[i] = w.sunCol[i]*(1-night) + nightC*night;
+    w.skyAmb[i] = b.skyAmb[i]*(0.30 + up*0.85)*(1-night) + [0.06,0.08,0.16][i]*night;
+    w.grdAmb[i] = b.grdAmb[i]*(0.35 + up*0.75)*(1-night) + [0.03,0.03,0.05][i]*night;
+    w.sky[i]    = b.sky[i]*(0.22 + up*1.0)*(1-night)   + [0.02,0.03,0.08][i]*night;
+    w.skyTop[i] = b.skyTop[i]*(0.22 + up*1.0)*(1-night)+ [0.01,0.01,0.04][i]*night;
+    w.fog[i]    = b.fog[i]*(0.28 + up*0.9)*(1-night)   + [0.03,0.04,0.09][i]*night;
+  }
+  if(G.weather === "rain"){
+    for(let i=0;i<3;i++){ w.sunCol[i] *= 0.55; w.skyAmb[i] *= 0.85; w.fog[i] *= 1.15; }
+  }
+}
+function stepSky(dt){
+  if(G.paused) return;
+  G.timeOfDay = ((G.timeOfDay||0.28) + dt/DAY_LEN) % 1;
+}
+/* setting the weather always rebuilds what it needs, so it can be set from
+   anywhere — a quality change, the menu, or the roll on entering a sector */
+function setWeather(kind){
+  G.weather = kind;
+  G.rain = [];
+  if(kind === "rain"){
+    const n = quality === "low" ? 90 : quality === "medium" ? 180 : 300;
+    const p = G.player || {x:0,y:0,z:0};
+    for(let i=0;i<n;i++) G.rain.push({
+      x: p.x + (Math.random()-0.5)*44,
+      z: p.z + (Math.random()-0.5)*44,
+      y: p.y + Math.random()*24,
+      seed: Math.random()
+    });
+  }
+}
+function rollWeather(){ setWeather(Math.random() < 0.28 ? "rain" : "clear"); }
+function updateRain(dt){
+  if(G.weather !== "rain" || !G.rain.length) return;
+  const p = G.player || {x:0,y:0,z:0};
+  const dts = dt/1000;
+  for(const d of G.rain){
+    d.y -= 26*dts;
+    if(d.y < p.y - 2 || Math.abs(d.x - p.x) > 26 || Math.abs(d.z - p.z) > 26){
+      d.x = p.x + (Math.random()-0.5)*44;
+      d.z = p.z + (Math.random()-0.5)*44;
+      d.y = p.y + 14 + Math.random()*10;
+    }
+  }
+}
+
+/* ------------------------------------------------------------------- draw */
+function buildCity(){
+  for(const c of G.cars){
+    const dx = c.x - EYE[0], dz = c.z - EYE[2];
+    if(Math.hypot(dx,dz) > 130) continue;
+    const yaw = c.axis ? (c.back ? Math.PI : 0) : (c.back ? -Math.PI/2 : Math.PI/2);
+    if(c.dead){
+      const k = Math.min(1, c.t/900);
+      draw(MESH_BOX, c.x, 0.6, c.z, yaw + k*0.3, k*0.2, k*0.25, 2.0, 1.0, c.len,
+           [0.10,0.09,0.09], {rough:0.95, metal:0.2});
+      continue;
+    }
+    draw(MESH_BOX, c.x, 0.75, c.z, yaw,0,0, 2.0, 0.85, c.len, c.col, {rough:0.22, metal:0.75});
+    draw(MESH_BOX, c.x, 1.42, c.z, yaw,0,0, 1.75, 0.62, c.len*0.52, [0.05,0.06,0.09],
+         {rough:0.08, metal:0.4});
+    const f = c.back ? -1 : 1;
+    draw(MESH_BOX, c.x + (c.axis?0:f*c.len*0.48), 0.72, c.z + (c.axis?f*c.len*0.48:0), yaw,0,0,
+         1.5, 0.26, 0.14, [1,0.92,0.7], {kind:3, emis:0.9, alpha:0.95});
+    for(const side of [-1,1]){
+      draw(MESH_TUBE, c.x + (c.axis? side*0.95 : 0), 0.34, c.z + (c.axis? 0 : side*0.95),
+           c.axis?0:Math.PI/2, Math.PI/2, 0, 0.66,2.0,0.66, [0.05,0.05,0.06], {rough:0.9});
+    }
+  }
+  if(G.weather === "rain") for(const d of G.rain)
+    draw(MESH_BOX, d.x, d.y, d.z, 0,0,0, 0.035, 0.85, 0.035, [0.62,0.72,0.86],
+         {kind:3, alpha:0.34, emis:0.1});
+}
+
 /* ------------------------------------------------------------------ scene */
 const UI = document.getElementById("ui");
 const UX = UI.getContext("2d");
@@ -3529,9 +3725,21 @@ function buildFrame(){
   const cx = EYE[0], cz = EYE[2];
   for(const b of w.boxes){
     const d = Math.hypot(b.x-cx, b.z-cz);
-    if(d > 240) continue;
-    draw(MESH_BOX, b.x, b.h/2, b.z, 0,0,0, b.w, b.h, b.d, b.col,
-         {kind:2, rough:0.8, metal:0.05, accent:w.accent, shadow:d < 90});
+    if(d > 260) continue;
+    if(b.base){
+      const h2 = b.h - b.base;
+      draw(MESH_BOX, b.x, b.base + h2/2, b.z, 0,0,0, b.w, h2, b.d, b.col,
+           {kind:2, rough:0.8, metal:0.05, accent:w.accent, shadow:d < 90});
+      if(d < 120) for(let i=0;i<4;i++){          /* the pillars holding it up */
+        const px = b.x + (i%2 ? 1 : -1)*(b.w/2 - 1.4);
+        const pz = b.z + ((i>>1)%2 ? 1 : -1)*(b.d/2 - 1.4);
+        draw(MESH_TUBE, px, b.base/2, pz, 0,0,0, 1.5, b.base, 1.5, b.col,
+             {rough:0.75, metal:0.05, shadow:d < 90});
+      }
+    } else {
+      draw(MESH_BOX, b.x, b.h/2, b.z, 0,0,0, b.w, b.h, b.d, b.col,
+           {kind:2, rough:0.8, metal:0.05, accent:w.accent, shadow:d < 90});
+    }
   }
   for(const p of w.props) drawProp(p, Math.hypot(p.x-cx, p.z-cz));
 
@@ -3539,7 +3747,7 @@ function buildFrame(){
   for(const e of G.ents){
     if(e.dead && now()-e.deadT > 1100) continue;
     const d = Math.hypot(e.x-cx, e.z-cz);
-    if(d > 150) continue;
+    if(d > 110) continue;
     if(e.dead){
       const k = 1 - (now()-e.deadT)/1100;
       e.yaw += 0.0; drawChar(e, d + (1-k)*60);
@@ -3556,6 +3764,7 @@ function buildFrame(){
   }
 
   buildMarker();
+  buildCity();
   buildEffects();
 }
 
@@ -3580,6 +3789,11 @@ const GOLD3 = srgb("#F7BC46");
 function drawProp(p, d){
   if(d > 120) return;
   const s = p.s, c = p.col;
+  if(p.fallen){
+    draw(MESH_TUBE, p.x + Math.sin(p.fallDir)*2.2, 0.28, p.z + Math.cos(p.fallDir)*2.2,
+         p.fallDir, Math.PI/2, 0, 0.30*s, 5.2*s, 0.30*s, METAL3, {rough:0.8, metal:0.5});
+    return;
+  }
   const MET = {rough:0.45, metal:0.6};
   if(p.k==="tree"){
     draw(MESH_TAPER, p.x, 1.6*s, p.z, 0,0,0, 0.32*s, 3.2*s, 0.32*s, BARK3, {rough:0.95});
@@ -3707,6 +3921,7 @@ function renderScene(){
   m4look(EYE, AT, UP3, VIEW);
   m4mul(PROJ, VIEW, VP);
 
+  applyDayNight();
   buildFrame();
 
   /* ---- shadows ---- */
@@ -4758,7 +4973,7 @@ SCREENS.addEventListener("click", ev=>{
     return;
   }
   if(d.quality){ quality = d.quality; try{ localStorage.setItem(SAVE_KEY+"/q", quality); }catch(e){}
-    resize(); openScreen("pause"); return; }
+    resize(); if(G.world) setWeather(G.weather); openScreen("pause"); return; }
   if(d.tab){ menuTab = d.tab; openScreen("pause"); return; }
   if(d.cat){ cx.cat = d.cat; cx.cap = 120; openScreen("pause"); return; }
   if(d.become){
@@ -4817,8 +5032,12 @@ function enterSector(id){
   G.rings = []; G.arcs = []; G.orbits = []; G.drops = [];
   G.bossEnt = null; G.surge = 0; G.combo = 0; G.ended = false; G.spawnT = 900;
   G.mission = null; G.lockTarget = null; G.freeze = 0; G.lastCombat = -1e9;
+  G.cars = []; G.rain = [];
   buildHost();
   G.camYaw = 0; G.camPitch = 0.26;
+  rollWeather();
+  spawnTraffic(Math.round(WORLD/34));
+  spawnAmbientCivs(6);
   for(let i=0;i<5;i++) spawnWanderer();
   if(bossReady(id) && !sectorCleared(id)) spawnBoss();
   save();
