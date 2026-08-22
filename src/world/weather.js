@@ -75,7 +75,7 @@ function applyDayNight(){
   }
 }
 function stepSky(dt){
-  if(G.paused) return;
+  if(G.paused && !G.attract) return;
   G.timeOfDay = ((G.timeOfDay||0.28) + dt/DAY_LEN) % 1;
 }
 /* setting the weather always rebuilds what it needs, so it can be set from

@@ -6,7 +6,13 @@ const MAX_ATTACKERS = 3;
 function attackerCount(){ let n=0; for(const e of G.ents) if(!e.dead && e.team==="foe" && e.engaged) n++; return n; }
 function enemyThink(e, dt){
   const p = G.player;
-  if(!p || p.dead){ e.mx=e.mz=0; e.engaged=false; return; }
+  if(!p || p.dead){                       /* nobody to come for — walk it off */
+    e.engaged = false;
+    e.aiT -= dt;
+    if(e.aiT <= 0){ e.aiT = 1600 + Math.random()*2600; e.wander = Math.random()*6.283; }
+    e.mx = Math.sin(e.wander||0)*0.35; e.mz = Math.cos(e.wander||0)*0.35;
+    return;
+  }
   const dx = p.x-e.x, dz = p.z-e.z, d = Math.hypot(dx,dz);
   e.yaw = Math.atan2(dx, dz);
   const aggro = e.boss ? 80 : 38;

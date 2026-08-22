@@ -36,7 +36,8 @@ function beingCard(b, extra){
 
 function openScreen(name, opts){
   G.paused = true;
-  SCREENS.innerHTML = `<div class="screen"><div class="wrap">${screenHtml(name,opts)}</div></div>`;
+  const see = (name === "title" && G.attract) ? " screen--see" : "";
+  SCREENS.innerHTML = `<div class="screen${see}"><div class="wrap">${screenHtml(name,opts)}</div></div>`;
   paintPortraits(SCREENS);
   SCREENS.scrollTop = 0;
   HUD.classList.add("hide");

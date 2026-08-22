@@ -53,6 +53,35 @@ function syncHostLive(){
   }
 }
 
+/* The title used to sit on a flat black page while a whole renderer idled
+   behind it. Now it sits over a real sector — traffic, people, weather, the
+   hour of the day — with the camera drifting over it and nobody in it yet. */
+function startAttract(){
+  if(G.world) return;
+  const s = SECTORS[(Math.random()*4)|0];        /* one of the four cities */
+  G.sector = s.id;
+  G.world = buildWorld(s.id);
+  G.ents = []; G.projs = []; G.parts = []; G.pops = []; G.beams = [];
+  G.rings = []; G.arcs = []; G.orbits = []; G.drops = [];
+  G.player = null; G.bossEnt = null; G.mission = null; G.cars = []; G.rain = [];
+  G.timeOfDay = 0.20 + Math.random()*0.30;
+  rollWeather();
+  spawnTraffic(Math.round(WORLD/30));
+  spawnAmbientCivs(9);
+  for(let i=0;i<7;i++) spawnWanderer();
+  G.attract = {x:G.world.cx, y:26, z:G.world.cz, height:1.8, a:Math.random()*6.283, r:86};
+  G.camPitch = 0.20; G.camDist = 20;
+}
+function stepAttract(dt){
+  const a = G.attract; if(!a) return;
+  a.a += dt*0.000055;
+  a.x = G.world.cx + Math.sin(a.a)*a.r;
+  a.z = G.world.cz + Math.cos(a.a)*a.r;
+  a.y = groundAt(a.x, a.z, 1) + 22 + Math.sin(a.a*1.7)*7;
+  G.camYaw = a.a + Math.PI;                     /* always looking back in */
+}
+function endAttract(){ G.attract = null; }
+
 function frame(ts){
   requestAnimationFrame(frame);
   let dt = Math.min(50, ts - (G.last||ts));
@@ -60,7 +89,8 @@ function frame(ts){
   if(!G.world) return;
   /* hit-stop: a heavy landing freezes the world for a breath */
   if(G.freeze > 0){ G.freeze -= dt; dt *= 0.08; }
-  if(!G.paused) update(dt);
+  if(G.attract) stepAttract(dt);
+  if(!G.paused || G.attract) update(dt);
   renderScene();
   updateHud();
   audioTick();
@@ -72,12 +102,9 @@ function boot(){
   if(!localStorage.getItem(SAVE_KEY+"/q") && (matchMedia("(pointer: coarse)").matches || innerWidth < 760)) quality = "medium";
   resize();
   load();
-  if(!S.started) openScreen("title");
-  else {
-    if(!S.host) S.host = S.unlocked[0] || "daredevil";
-    enterSector(S.sector||"hk");
-    openScreen("title");
-  }
+  if(S.started && !S.host) S.host = S.unlocked[0] || "daredevil";
+  startAttract();
+  openScreen("title");
 }
 boot();
 requestAnimationFrame(frame);

@@ -26,8 +26,18 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   await p.goto(process.env.GAME_URL || ("file://" + require("path").resolve(__dirname, "../index.html")));
   await p.waitForTimeout(400);
   await p.evaluate(()=>{ quality="low"; resize(); });
+
+  /* the title sits over a city that is actually running */
+  await p.waitForTimeout(900);
+  const t0 = await p.evaluate(()=>({attract:!!G.attract, world:!!G.world, player:!!G.player,
+                                    calls:drawCalls, cars:G.cars.length, ents:G.ents.length,
+                                    x:G.attract?G.attract.x:0, tod:G.timeOfDay}));
+  await p.waitForTimeout(900);
+  const t1 = await p.evaluate(()=>({x:G.attract?G.attract.x:0, tod:G.timeOfDay}));
+
   await p.click('[data-start="luke-cage"]');
   await p.waitForTimeout(1300);
+  const t2 = await p.evaluate(()=>({attract:!!G.attract, player:!!G.player}));
 
   const r = await p.evaluate(()=>{
     const o = {};
@@ -477,6 +487,11 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
     return o;
   });
 
+  ok("the title runs over a living city",
+     t0.attract && t0.world && !t0.player && t0.calls > 100 && t0.cars > 0 && t0.ents > 0,
+     JSON.stringify({calls:t0.calls, cars:t0.cars, ents:t0.ents}));
+  ok("and that city moves", t0.x !== t1.x && t0.tod !== t1.tod);
+  ok("picking a body takes over from it", !t2.attract && t2.player);
   ok("world comes up live", r.live);
   ok("content counts", r.counts.beings===616 && r.counts.gear===74 && r.counts.ai===30 && r.counts.sectors===30, JSON.stringify(r.counts));
   ok("all 616 beings build", r.allBeings.bad===0, r.allBeings.badName);

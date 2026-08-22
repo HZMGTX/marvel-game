@@ -122,6 +122,8 @@ body{
 /* ---------------------------------------------------------------- screens */
 .screen{position:fixed;inset:0;z-index:20;background:rgba(7,6,14,.93);overflow-y:auto;overscroll-behavior:contain;
   padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(24px + var(--safe-b));-webkit-overflow-scrolling:touch}
+.screen--see{background:linear-gradient(100deg,rgba(7,6,14,.94) 0%,rgba(7,6,14,.88) 46%,
+  rgba(7,6,14,.36) 74%,rgba(7,6,14,.20) 100%)}
 .wrap{max-width:1080px;margin:0 auto}
 .wordmark{font-family:var(--f-display);text-transform:uppercase;line-height:.92;
   font-size:clamp(30px,8vw,58px);text-shadow:2px 0 0 rgba(255,83,64,.55),-2px 0 0 rgba(65,227,234,.5)}

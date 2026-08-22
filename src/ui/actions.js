@@ -15,11 +15,12 @@ SCREENS.addEventListener("click", ev=>{
     S.host = d.start;
     (GEAR_BY_OWNER[d.start]||[]).forEach(g=>S.gearOwned.push(g.id));
     save();
+    endAttract();
     enterSector("hk"); closeScreen();
     feed("You are inside somebody. Try not to enjoy it.","big");
     return;
   }
-  if(d.act==="continue"){ enterSector(S.sector||"hk"); closeScreen(); return; }
+  if(d.act==="continue"){ endAttract(); enterSector(S.sector||"hk"); closeScreen(); return; }
   if(d.act==="close"){ closeScreen(); return; }
   if(d.act==="abandon"){ abandonMission(); openScreen("pause"); return; }
   if(d.act==="sound"){ audioToggle(); openScreen("pause"); return; }

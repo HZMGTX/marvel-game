@@ -7,7 +7,9 @@ hold on to a person, and while you do, everything they can do is something you c
 files, no audio files — every character, every building, every effect and every sound is
 generated from code at runtime.
 
-Open `index.html` in a browser. That's the whole install.
+Open `index.html` in a browser. That's the whole install. The title screen is not a picture
+— it is one of the four cities, running, with traffic on the roads and the hour of the day
+turning over, and the camera drifting around the skyline while you decide who to be.
 
 ## The rules that make it a game
 
@@ -239,7 +241,7 @@ npm i playwright
 node test/regress.js
 ```
 
-It exits non-zero on any failure. Sixty-four checks, currently all passing — the last four
+It exits non-zero on any failure. Sixty-seven checks, currently all passing — the last four
 of them in a real 390×844 touch context, checking that the phone build comes up, that nothing
 on its HUD collides or runs off the edge, and that a quick tap fires an ability. Point it at a
 different build with `GAME_URL` — the bundle in `dist/` has to pass exactly the same set.

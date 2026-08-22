@@ -8,7 +8,7 @@ function renderScene(){
   resetQueue();
 
   const p = G.player, q = QUALITY[quality];
-  const tgt = p || {x:0,y:1,z:0,height:1.8};
+  const tgt = p || G.attract || {x:0,y:1,z:0,height:1.8};
   const sh = G.shake*0.16;
   const flyOut = (p && p.fly) ? 1.9 : 0;
   const camD = G.camDist + flyOut;
