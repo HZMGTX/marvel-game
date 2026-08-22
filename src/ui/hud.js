@@ -122,18 +122,38 @@ function drawPortrait(cv, b){
   const pal = palette(b);
   const px = c => `rgb(${Math.round(Math.pow(Math.min(1,c[0]),1/2.2)*255)},${Math.round(Math.pow(Math.min(1,c[1]),1/2.2)*255)},${Math.round(Math.pow(Math.min(1,c[2]),1/2.2)*255)})`;
   const u = w/100;
+  /* Half the roster wears black. On a black card they disappeared, so every
+     portrait now sits against a low wash of its own accent with a halo behind
+     the head — a dark costume gets an edge, a white one gets somewhere to be. */
+  const level = (c, lv) => { const m = (c[0]+c[1]+c[2])/3 || 1e-4, k = lv/m;
+                             return [c[0]*k, c[1]*k, c[2]*k]; };
+  const rgba = (c, a) => `rgba(${Math.round(Math.pow(Math.min(1,c[0]),1/2.2)*255)},`
+                       + `${Math.round(Math.pow(Math.min(1,c[1]),1/2.2)*255)},`
+                       + `${Math.round(Math.pow(Math.min(1,c[2]),1/2.2)*255)},${a})`;
   g.clearRect(0,0,w,h);
   const bg = g.createLinearGradient(0,0,0,h);
-  bg.addColorStop(0, px(pal.dark)); bg.addColorStop(1, "#0A0912");
+  bg.addColorStop(0,    px(level(pal.c3, 0.115)));
+  bg.addColorStop(0.62, px(level(pal.c3, 0.030)));
+  bg.addColorStop(1,    "#07060E");
   g.fillStyle = bg; g.fillRect(0,0,w,h);
+  const halo = g.createRadialGradient(50*u, 40*u, 3*u, 50*u, 44*u, 48*u);
+  halo.addColorStop(0, rgba(pal.c3, 0.26));
+  halo.addColorStop(1, rgba(pal.c3, 0));
+  g.fillStyle = halo; g.fillRect(0,0,w,h);
   if(pal.cape){ g.fillStyle = px(pal.capeCol);
     g.beginPath(); g.moveTo(12*u,100*u); g.lineTo(24*u,52*u); g.lineTo(76*u,52*u); g.lineTo(88*u,100*u);
     g.closePath(); g.fill(); }
+  /* a costume the same tone as its own card needs an edge, whichever way it
+     goes: light silhouettes get a dark line, dark ones get a light one */
+  const lum = (pal.c1[0] + pal.c1[1] + pal.c1[2])/3;
+  const edge = lum < 0.12 ? "rgba(232,226,246,.60)" : "rgba(6,5,12,.62)";
+  g.lineJoin = "round";
   /* shoulders */
   g.fillStyle = px(pal.c1);
   g.beginPath();
   g.moveTo(18*u,100*u); g.quadraticCurveTo(22*u,62*u, 50*u,60*u);
   g.quadraticCurveTo(78*u,62*u, 82*u,100*u); g.closePath(); g.fill();
+  g.strokeStyle = edge; g.lineWidth = Math.max(1, 1.6*u); g.stroke();
   /* chest mark */
   g.fillStyle = px(pal.c3); g.fillRect(43*u, 74*u, 14*u, 12*u);
   /* neck */
@@ -141,6 +161,7 @@ function drawPortrait(cv, b){
   g.fillRect(44*u, 52*u, 12*u, 12*u);
   /* head */
   g.beginPath(); g.ellipse(50*u, 38*u, 19*u, 22*u, 0, 0, 6.2832); g.fill();
+  g.strokeStyle = edge; g.lineWidth = Math.max(1, 1.4*u); g.stroke();
   if(!pal.masked && !pal.machine){
     g.fillStyle = px(pal.hair);
     g.beginPath(); g.ellipse(50*u, 26*u, 20*u, 13*u, 0, Math.PI, 0); g.fill();

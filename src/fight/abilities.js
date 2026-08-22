@@ -115,7 +115,9 @@ function shoot(e, yaw, pitch, a, o){
   G.projs.push({
     owner:e, team:e.team,
     x:e.x + Math.sin(y)*(e.rad+0.5), y:e.y + e.height*0.62, z:e.z + Math.cos(y)*(e.rad+0.5),
-    vx:Math.sin(y)*sp, vy:Math.sin(pitch)*sp, vz:Math.cos(y)*sp,
+    /* the horizontal part has to shrink as the shot tips up, or a steep aim
+       comes out at half the angle you asked for and sails past underneath */
+    vx:Math.sin(y)*Math.cos(pitch)*sp, vy:Math.sin(pitch)*sp, vz:Math.cos(y)*Math.cos(pitch)*sp,
     r:Math.max(0.14, a.r*0.036), life:a.life||900, t:0, mul:a.mul, c:e.pal.c3,
     pierce:a.pierce, home:a.home||0, hit:new Set(), opts:o
   });

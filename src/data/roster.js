@@ -5,6 +5,13 @@
 const ROSTER = [
 /* --- Hell's Kitchen ----------------------------------------------------- */
 "Daredevil|4|ROGUE|hk|hero,street|Devil of Hell's Kitchen",
+"Hammerhead|3|BRAWLER|hk|villain,street,mob|Skull First",
+"Silvermane|3|BRAWLER|hk|villain,street,mob|Cybernetic Grip",
+"Shades|2|MARKSMAN|hk|villain,street|Visor Beam",
+"Cottonmouth|3|BRAWLER|hk|villain,street,mob|Club Owner's Welcome",
+"Mariah Dillard|2|PSI|hk|villain,street,mob|Family Business",
+"Diamondback|4|BRAWLER|hk|villain,street|Diamond Rounds",
+"Man-Wolf|4|BEAST|hk|antihero,beast,street|Moonstone Howl",
 "Elektra|4|ROGUE|hk|antihero,street|Sai Through the Heart",
 "The Punisher|3|MARKSMAN|hk|antihero,street|Full Magazine",
 "Kingpin|4|TITAN|hk|villain,street|Wilson Fisk Stands Up",
@@ -40,6 +47,14 @@ const ROSTER = [
 
 /* --- Queens / Spider-Verse ---------------------------------------------- */
 "Spider-Man|6|ROGUE|qns|hero,spider|Everything At Once",
+"Jackal|4|TECH|qns|villain,tech,spider|Clone Vat",
+"Stilt-Man|2|TECH|qns|villain,tech|Hydraulic Stride",
+"Leap-Frog|2|TECH|qns|villain,tech|Spring Boots",
+"Beetle|4|TECH|qns|villain,tech,armour|Carapace Barrage",
+"Gwen Stacy|1|ROGUE|qns|civilian,street|Nobody Was Watching",
+"Speedball|4|BLAST|qns|hero,young|Kinetic Bounce",
+"Night Thrasher|4|BRAWLER|qns|hero,young,tech|Board And Batons",
+"Turbo|4|BLAST|qns|hero,young,armour|Torpedo Suit",
 "Miles Morales|5|ROGUE|qns|hero,spider|Venom Blast",
 "Ghost-Spider|5|ROGUE|qns|hero,spider|",
 "Spider-Man 2099|5|ROGUE|qns|hero,spider|Talons and Decel Chute",
@@ -89,6 +104,30 @@ const ROSTER = [
 
 /* --- Manhattan / Avengers ------------------------------------------------ */
 "Captain America|6|BRAWLER|man|hero,avenger|I Can Do This All Day",
+"Thunderbolt Ross|3|MARKSMAN|man|villain,military|Standing Order",
+"Betty Ross|2|TECH|man|civilian,tech|Gamma Reading",
+"Rick Jones|2|BRAWLER|man|hero,street|The Kid Who Was There",
+"A-Bomb|6|TITAN|man|hero,gamma,beast|Armoured Gamma",
+"Amadeus Cho|5|TITAN|man|hero,gamma,tech|Eighth Smartest",
+"Justin Hammer|1|TECH|man|villain,tech|Hostile Takeover",
+"Riri Williams|5|TECH|man|hero,tech,armour|Homemade Armour",
+"Pepper Potts|4|TECH|man|hero,tech,armour|Rescue Protocol",
+"Happy Hogan|1|BRAWLER|man|civilian|Left Hook",
+"Howard Stark|1|TECH|man|civilian,tech|The Man Who Started It",
+"US Agent|4|BRAWLER|man|antihero,military|Star Shield",
+"Battlestar|4|BRAWLER|man|hero,military|Vibranium Buckler",
+"Peggy Carter|2|MARKSMAN|man|hero,military|Founding Agent",
+"Baron Strucker|4|TECH|man|villain,hydra|Satan Claw",
+"Jocasta|5|SYNTH|man|hero,ai,synthetic|Adamantium Frame",
+"Machine Man|5|SYNTH|man|hero,ai,synthetic|Extensible Arms",
+"Deathlok|5|SYNTH|man|antihero,ai,cyborg|Combat Computer",
+"Sleepwalker|5|MYSTIC|man|hero,cosmic|Warp Gaze",
+"Justice|5|PSI|man|hero,young,mutant|Telekinetic Push",
+"Firestar|5|BLAST|man|hero,young,mutant|Microwave Flare",
+"Living Lightning|5|BLAST|man|hero|Discharge",
+"Rage|5|TITAN|man|hero,young|Raw Strength",
+"Iron Lad|5|TECH|man|hero,young,armour|Neuro-Kinetic Armour",
+"Stature|5|TITAN|man|hero,young|Growth Spurt",
 "Winter Soldier|5|MARKSMAN|man|antihero,avenger|",
 "Falcon|5|MARKSMAN|man|hero,avenger|Redwing Deploy",
 "U.S. Agent|5|BRAWLER|man|antihero|",
@@ -156,6 +195,9 @@ const ROSTER = [
 
 /* --- The Raft ------------------------------------------------------------ */
 "Mister Negative|5|MYSTIC|raft|villain|Inner Demon Touch",
+"Moonstone|5|BLAST|raft|villain,cosmic|Gravity Well",
+"Red Guardian|4|BRAWLER|raft|antihero,military|Soviet Shield",
+"Melina Vostokoff|4|ROGUE|raft|antihero|Iron Maiden",
 "Zzzax|6|BLAST|raft|villain|",
 "Absorbing Man|6|TITAN|raft|villain|Become The Wall",
 "Titania|6|TITAN|raft|villain|",
@@ -185,6 +227,13 @@ const ROSTER = [
 
 /* --- Westchester / X-Men ------------------------------------------------- */
 "Professor X|7|PSI|wch|hero,mutant,xmen|Cerebro Broadcast",
+"Dark Phoenix|9|PSI|wch|villain,mutant,cosmic|Consume A Star",
+"Mirage|4|PSI|wch|hero,mutant|Your Own Fear",
+"Boom-Boom|4|BLAST|wch|hero,mutant|Time Bombs",
+"Siryn|4|BLAST|wch|hero,mutant|Sonic Scream",
+"Feral|4|BEAST|wch|antihero,mutant,beast|Claws Out",
+"Shatterstar|5|ROGUE|wch|hero,mutant|Twin Blades",
+"High Evolutionary|7|TECH|wch|villain,tech,cosmic|Forced Evolution",
 "Cyclops|6|BLAST|wch|hero,mutant,xmen|Visor Wide Open",
 "Jean Grey|8|PSI|wch|hero,mutant,xmen|Telekinetic Unmaking",
 "Wolverine|6|BEAST|wch|hero,mutant,xmen|Berserker Barrage",
@@ -235,6 +284,10 @@ const ROSTER = [
 
 /* --- Krakoa ------------------------------------------------------------- */
 "Magneto|8|BLAST|kra|antihero,mutant|Master Of Magnetism",
+"Puck|4|BRAWLER|kra|hero,mutant|Low And Fast",
+"Sasquatch|6|TITAN|kra|hero,beast|Great Beast",
+"Snowbird|6|MYSTIC|kra|hero,magic|Shape Of The North",
+"Shaman|5|MYSTIC|kra|hero,magic|Medicine Pouch",
 "Apocalypse|8|MONARCH|kra|villain,mutant|Only The Strongest",
 "Mister Sinister|7|PSI|kra|villain,mutant|The Files On Everyone",
 "Exodus|7|PSI|kra|villain,mutant|",
@@ -265,6 +318,8 @@ const ROSTER = [
 
 /* --- Wakanda ------------------------------------------------------------- */
 "Black Panther|6|ROGUE|wak|hero,wakandan,avenger|Kinetic Discharge",
+"Erik Killmonger|5|BRAWLER|wak|villain,wakandan|Usurper's Claim",
+"Ulysses Klaue|3|TECH|wak|villain,tech|Sonic Emitter",
 "Shuri|5|TECH|wak|hero,wakandan,tech|",
 "Okoye|5|BRAWLER|wak|hero,wakandan|Spear Of The Dora",
 "Nakia|4|ROGUE|wak|hero,wakandan|",
@@ -349,6 +404,7 @@ const ROSTER = [
 
 /* --- Attilan / Inhumans -------------------------------------------------- */
 "Black Bolt|9|BLAST|att|hero,inhuman|One Whisper",
+"Krang|4|BRAWLER|att|villain,atlantean|Warlord Of Atlantis",
 "Medusa|6|MONARCH|att|hero,inhuman|Prehensile Hair",
 "Karnak|6|ROGUE|att|hero,inhuman|Find The Flaw",
 "Gorgon|7|TITAN|att|hero,inhuman|Hoof Quake",
@@ -367,6 +423,11 @@ const ROSTER = [
 
 /* --- Sanctum Sanctorum --------------------------------------------------- */
 "Doctor Strange|8|MYSTIC|sanc|hero,mystic|Crimson Bands Of Cyttorak",
+"Cagliostro|5|MYSTIC|sanc|villain,magic|Alchemy Of Ages",
+"Jack Russell|4|BEAST|sanc|antihero,beast|The Wolf Takes Over",
+"Ulysses Bloodstone|5|MARKSMAN|sanc|hero,magic|The Gem Endures",
+"Union Jack|3|MARKSMAN|sanc|hero,military|Trench Raider",
+"Meggan|5|MYSTIC|sanc|hero,mutant,magic|Elemental Shift",
 "Clea|7|MYSTIC|sanc|hero,mystic|",
 "Brother Voodoo|7|MYSTIC|sanc|hero,mystic|Loa Of The Dead",
 "Daimon Hellstrom|7|MYSTIC|sanc|antihero,demon|Soulfire Trident",
@@ -506,6 +567,7 @@ const ROSTER = [
 
 /* --- Knowhere / Guardians ------------------------------------------------ */
 "Star-Lord|5|MARKSMAN|know|hero,guardian|Element Gun Volley",
+"Firebird|5|BLAST|know|hero,cosmic|Solar Flare",
 "Gamora|6|ROGUE|know|hero,guardian|Deadliest Woman In The Galaxy",
 "Drax the Destroyer|7|TITAN|know|hero,guardian|Destroyer, Literally",
 "Rocket Raccoon|5|MARKSMAN|know|hero,guardian,beast|Big Gun, Small Friend",
@@ -618,6 +680,7 @@ const ROSTER = [
 
 /* --- Battleworld --------------------------------------------------------- */
 "God Emperor Doom|10|ENTITY|bw|villain|God Emperor Doom",
+"Hyperion|8|TITAN|bw|villain,cosmic|Atomic Vision",
 "The Beyonder|10|ENTITY|bw|entity|Desire Is Simple",
 "Sheriff Strange|8|MYSTIC|bw|hero,mystic|",
 "Thor Corps|8|TITAN|bw|hero|A Hundred Hammers",
@@ -656,6 +719,7 @@ const ROSTER = [
 
 /* --- The Bleed ----------------------------------------------------------- */
 "The Beyonders|10|ENTITY|bleed|entity|Everything Was An Experiment",
+"Knull|10|SYMBIOTE|bleed|villain,cosmic,symbiote|All-Black The Necrosword",
 "Black Priest|8|MYSTIC|bleed|villain,mystic|",
 "Mapmakers|8|SYNTH|bleed|villain,ai|",
 "Black Swan|8|MYSTIC|bleed|villain,mystic|She Has Seen It End",

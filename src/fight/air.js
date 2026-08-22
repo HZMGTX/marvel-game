@@ -10,16 +10,19 @@
 
 const AIR_GAP   = 2.6;      /* how far above somebody counts as being up there */
 const LEAP_CD   = 2800;
-const THROW_CD  = 2000;
+const THROW_CD  = 1700;
 const LAUNCH_VY = 8.6;
 const DIVE_HIT_R = 2.7;
 
-/* the pitch you need to put something where they actually are */
-function aimPitch(from, to){
+/* The pitch you need to put something where they actually are. A shot leaves
+   the muzzle already half a metre downrange, and on a steep angle that half
+   metre is metres of height by the time it arrives — so the muzzle counts. */
+function aimPitch(from, to, muzzle){
   if(!to) return 0;
-  const d  = Math.hypot(to.x - from.x, to.z - from.z);
+  const d0 = Math.hypot(to.x - from.x, to.z - from.z);
+  const d  = Math.max(0.4, d0 - (muzzle || 0));
   const dy = (to.y + to.height*0.55) - (from.y + from.height*0.62);
-  return Math.atan2(dy, Math.max(0.6, d));
+  return Math.atan2(dy, d);
 }
 
 /* who a shot is meant for: your lock, or whatever is in front of you */
@@ -37,7 +40,7 @@ function aimTarget(e){
   }
   return best;
 }
-function aimPitchFor(e){ return aimPitch(e, aimTarget(e)); }
+function aimPitchFor(e){ return aimPitch(e, aimTarget(e), e.rad + 0.5); }
 
 /* a swing reaches higher while its owner is off the ground */
 function vReach(e){ return e.grounded ? 2.0 : 3.4; }
@@ -65,7 +68,7 @@ function groundAnswersAir(e, p, d){
   /* too far or too high to jump — throw something instead */
   e.airT = now() + THROW_CD + Math.random()*900;
   const rock = {speed: 300, life: 1500, r: 9, mul: e.act.light.mul*1.25};
-  shoot(e, Math.atan2(p.x - e.x, p.z - e.z), aimPitch(e, p), rock, {knock: 150});
+  shoot(e, Math.atan2(p.x - e.x, p.z - e.z), aimPitch(e, p, e.rad + 0.5), rock, {knock: 150});
   SFX.shot(e);
 }
 

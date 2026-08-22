@@ -48,9 +48,13 @@ function missionOffers(sectorId){
   const gearHere = cands.flatMap(b=>(GEAR_BY_OWNER[b.id]||[]).map(g=>({g, b})));
   const kinds = ["hunt","hold","rescue","chase"];
   if(gearHere.length) kinds.push("recover");
+  for(let i=kinds.length-1;i>0;i--){                 /* a board of three different jobs */
+    const j = Math.floor(rng()*(i+1));
+    const t = kinds[i]; kinds[i] = kinds[j]; kinds[j] = t;
+  }
   const out = [];
   for(let i=0;i<3;i++){
-    const kind = kinds[Math.floor(rng()*kinds.length)];
+    const kind = kinds[i % kinds.length];
     const target = cands[Math.floor(rng()*cands.length)] || boss;
     const pick = gearHere.length ? gearHere[Math.floor(rng()*gearHere.length)] : null;
     out.push({
@@ -185,11 +189,15 @@ function updateMission(dt){
   }
 }
 
+/* what a job pays, so the board can say it before you take it */
+function missionReward(m){
+  return Math.round((60 + m.tier*22) * MISSION_DEFS[m.kind].reward);
+}
 function completeMission(){
   const M = G.mission; if(!M || M.done) return;
   M.done = true;
   const m = M.def;
-  const gain = Math.round((60 + m.tier*22) * MISSION_DEFS[m.kind].reward);
+  const gain = missionReward(m);
   S.essence += gain;
   S.missionsDone = (S.missionsDone||0) + 1;
   S.missionSeen = (S.missionSeen||{}); S.missionSeen[m.id] = true;

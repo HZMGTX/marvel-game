@@ -149,7 +149,7 @@ function workTab(){
         <span class="s" style="color:var(--gold)">${esc(MISSION_DEFS[m.kind].name)}</span>
         <span class="n" style="font-size:13px">${esc(missionTitle(m))}</span>
         <span class="s" style="text-transform:none;letter-spacing:0;color:var(--muted)">${esc(missionLine(m))}</span>
-        <span class="s">reward scales with T${m.tier}${t?" · "+esc(t.name):""}</span>
+        <span class="s">${missionReward(m)} essence · T${m.tier}${t?" · "+esc(t.name):""}</span>
       </button>`;}).join("")}
   </div>`}`;
 }
