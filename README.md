@@ -4,8 +4,8 @@ A single-file 3D action game. You are a spark with no body of your own. You can 
 a person, and while you do, everything they can do is something you can do.
 
 **616 beings. 74 pieces of gear. 30 artificial minds. 30 sectors.** One HTML file, no
-libraries, no art files, no audio files — every character, every building and every effect
-is generated from code at runtime.
+libraries, no art files, no audio files — every character, every building, every effect and
+every sound is generated from code at runtime.
 
 Open `index.html` in a browser. That's the whole install.
 
@@ -88,6 +88,13 @@ pavement who scatter when a fight starts, street lamps and cars you can wreck, a
 buildings that stand on pillars so you can walk in under them. The sun goes round on an
 eight-minute cycle — dawn, noon, dusk, night with the windows lit — and it rains about
 a third of the time.
+
+## Sound
+
+Sixteen sounds, all synthesised at the moment they play — impacts, a bright chime for a
+parry, whooshes, beams, explosions, footsteps, a low city drone and rain that fades with
+the weather. There are no audio files in this repository. It starts on your first tap,
+because that is the rule browsers hold you to, and there is an on/off switch in Rules.
 
 ## Under the hood
 

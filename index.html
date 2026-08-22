@@ -2201,6 +2201,183 @@ function unitStats(b, o){
 
 
 /* ==========================================================================
+   SOUND
+   Synthesised on the fly with the Web Audio API — no audio files, same as
+   everything else here. Nothing starts until the first tap, because that is
+   the rule browsers hold you to.
+   ========================================================================== */
+const SND = {
+  ctx:null, master:null, bus:{}, ready:false, on:true, vol:0.7,
+  noise:null, rainSrc:null, rainGain:null, cityGain:null, last:{}
+};
+
+function audioInit(){
+  if(SND.ctx || !SND.on) return;
+  try{
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    const ctx = SND.ctx = new AC();
+    const master = SND.master = ctx.createGain();
+    master.gain.value = SND.vol;
+    /* a gentle limiter so a big fight cannot shred anyone's ears */
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -14; comp.knee.value = 22; comp.ratio.value = 8;
+    comp.attack.value = 0.004; comp.release.value = 0.22;
+    master.connect(comp); comp.connect(ctx.destination);
+
+    /* one second of noise, reused for everything percussive */
+    const len = ctx.sampleRate;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = Math.random()*2 - 1;
+    SND.noise = buf;
+
+    /* the city, always there under everything */
+    const city = ctx.createGain(); city.gain.value = 0; city.connect(master);
+    SND.cityGain = city;
+    const drone = ctx.createOscillator(); drone.type = "sawtooth"; drone.frequency.value = 47;
+    const dlp = ctx.createBiquadFilter(); dlp.type = "lowpass"; dlp.frequency.value = 180;
+    const dg = ctx.createGain(); dg.gain.value = 0.16;
+    drone.connect(dlp); dlp.connect(dg); dg.connect(city); drone.start();
+    const hum = ctx.createBufferSource(); hum.buffer = buf; hum.loop = true;
+    const hlp = ctx.createBiquadFilter(); hlp.type = "bandpass"; hlp.frequency.value = 340; hlp.Q.value = 0.6;
+    const hg = ctx.createGain(); hg.gain.value = 0.05;
+    hum.connect(hlp); hlp.connect(hg); hg.connect(city); hum.start();
+    city.gain.setTargetAtTime(0.5, ctx.currentTime, 2.0);
+
+    /* rain, faded in and out with the weather */
+    const rg = ctx.createGain(); rg.gain.value = 0; rg.connect(master);
+    SND.rainGain = rg;
+    const rn = ctx.createBufferSource(); rn.buffer = buf; rn.loop = true;
+    const rhp = ctx.createBiquadFilter(); rhp.type = "highpass"; rhp.frequency.value = 900;
+    const rlp = ctx.createBiquadFilter(); rlp.type = "lowpass"; rlp.frequency.value = 6200;
+    rn.connect(rhp); rhp.connect(rlp); rlp.connect(rg); rn.start();
+
+    SND.ready = true;
+  }catch(e){ SND.ready = false; }
+}
+
+/* one shot of shaped noise — impacts, whooshes, explosions */
+function sfxNoise(o){
+  if(!SND.ready || !SND.on) return;
+  const ctx = SND.ctx, t = ctx.currentTime;
+  const src = ctx.createBufferSource(); src.buffer = SND.noise;
+  src.loop = true;
+  src.playbackRate.value = o.rate || 1;
+  const f = ctx.createBiquadFilter();
+  f.type = o.filter || "bandpass";
+  f.frequency.setValueAtTime(o.f0 || 900, t);
+  if(o.f1) f.frequency.exponentialRampToValueAtTime(Math.max(40,o.f1), t + (o.dur||0.2));
+  f.Q.value = o.q || 1;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0002,(o.gain||0.3)*SND.vol), t + (o.atk||0.004));
+  g.gain.exponentialRampToValueAtTime(0.0001, t + (o.dur||0.2));
+  src.connect(f); f.connect(g); g.connect(SND.master);
+  src.start(t); src.stop(t + (o.dur||0.2) + 0.05);
+}
+/* one shot of tone — zaps, chimes, cues */
+function sfxTone(o){
+  if(!SND.ready || !SND.on) return;
+  const ctx = SND.ctx, t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  osc.type = o.type || "sine";
+  osc.frequency.setValueAtTime(o.f0 || 440, t);
+  if(o.f1) osc.frequency.exponentialRampToValueAtTime(Math.max(20,o.f1), t + (o.dur||0.2));
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0002,(o.gain||0.2)*SND.vol), t + (o.atk||0.006));
+  g.gain.exponentialRampToValueAtTime(0.0001, t + (o.dur||0.2));
+  osc.connect(g); g.connect(SND.master);
+  osc.start(t); osc.stop(t + (o.dur||0.2) + 0.05);
+}
+
+/* distance falloff, so a fight across the block is not in your ear */
+function near(x, z, reach){
+  if(!G.player) return 1;
+  const d = Math.hypot(x-G.player.x, z-G.player.z);
+  return Math.max(0, 1 - d/(reach||44));
+}
+/* stop the same sound stacking twenty deep in one frame */
+function throttle(key, ms){
+  const t = performance.now();
+  if((SND.last[key]||0) > t) return false;
+  SND.last[key] = t + ms;
+  return true;
+}
+
+const SFX = {
+  swing(e){
+    if(!throttle("swing", 70)) return;
+    sfxNoise({f0:1500, f1:420, dur:0.16, gain:0.12*near(e.x,e.z,30), q:0.8, rate:1.4});
+  },
+  hit(x, z, heavy, crit){
+    if(!throttle("hit", 32)) return;
+    const k = near(x, z);
+    if(!k) return;
+    sfxNoise({f0: crit?1600:900, f1:120, dur: heavy?0.30:0.16, gain:(crit?0.42:heavy?0.34:0.22)*k, q:1.2});
+    sfxTone({type:"sine", f0: crit?190:150, f1:48, dur:0.20, gain:0.26*k});
+  },
+  block(x,z){ sfxNoise({f0:2600,f1:900,dur:0.12,gain:0.20*near(x,z),q:3}); },
+  parry(x,z){
+    const k = near(x,z);
+    sfxTone({type:"triangle", f0:1180, f1:1760, dur:0.30, gain:0.30*k});
+    sfxTone({type:"sine", f0:2360, dur:0.22, gain:0.16*k, atk:0.002});
+    sfxNoise({f0:5200,f1:2200,dur:0.16,gain:0.16*k,q:2});
+  },
+  shot(e){
+    if(!throttle("shot", 45)) return;
+    const k = near(e.x,e.z,50);
+    sfxTone({type:"sawtooth", f0:820, f1:180, dur:0.16, gain:0.14*k});
+  },
+  beam(e){
+    const k = near(e.x,e.z,60);
+    sfxNoise({f0:400, f1:2600, dur:0.42, gain:0.24*k, q:0.7, filter:"bandpass"});
+    sfxTone({type:"sawtooth", f0:120, f1:60, dur:0.40, gain:0.18*k});
+  },
+  slam(x,z,R){
+    const k = near(x,z,70);
+    sfxNoise({f0:520, f1:60, dur:0.55, gain:0.42*k, q:0.6});
+    sfxTone({type:"sine", f0:96, f1:34, dur:0.60, gain:0.34*k});
+  },
+  boom(x,z){
+    const k = near(x,z,90);
+    sfxNoise({f0:900, f1:50, dur:0.85, gain:0.50*k, q:0.5});
+    sfxTone({type:"sine", f0:120, f1:28, dur:0.9, gain:0.40*k});
+  },
+  down(x,z){ const k=near(x,z); sfxTone({type:"triangle",f0:300,f1:70,dur:0.5,gain:0.24*k});
+             sfxNoise({f0:700,f1:90,dur:0.4,gain:0.22*k}); },
+  step(e){
+    if(!throttle("step", 250)) return;
+    sfxNoise({f0:260, f1:110, dur:0.09, gain:0.10*near(e.x,e.z,18), q:1.4});
+  },
+  land(e){ sfxNoise({f0:340,f1:80,dur:0.20,gain:0.24*near(e.x,e.z,30),q:1}); },
+  become(){ sfxTone({type:"triangle",f0:220,f1:880,dur:0.5,gain:0.22});
+            sfxNoise({f0:600,f1:4200,dur:0.42,gain:0.16,q:0.8}); },
+  surge(){ sfxTone({type:"sawtooth",f0:110,f1:660,dur:0.7,gain:0.30});
+           sfxNoise({f0:300,f1:5200,dur:0.7,gain:0.24,q:0.6}); },
+  reward(){ [523,659,784].forEach((f,i)=>setTimeout(()=>sfxTone({type:"triangle",f0:f,dur:0.24,gain:0.18}), i*90)); },
+  ui(){ sfxTone({type:"square", f0:520, f1:660, dur:0.05, gain:0.07}); },
+  tell(x,z){ sfxTone({type:"square", f0:300, f1:420, dur:0.18, gain:0.12*near(x,z,40)}); }
+};
+
+/* keep the beds in step with the world */
+function audioTick(){
+  if(!SND.ready) return;
+  const ctx = SND.ctx;
+  if(SND.rainGain) SND.rainGain.gain.setTargetAtTime(G.weather==="rain" ? 0.22 : 0, ctx.currentTime, 0.8);
+  if(SND.cityGain) SND.cityGain.gain.setTargetAtTime(G.paused ? 0.12 : 0.5, ctx.currentTime, 0.6);
+}
+function audioToggle(){
+  SND.on = !SND.on;
+  if(SND.on){ audioInit(); if(SND.master) SND.master.gain.value = SND.vol; }
+  else if(SND.master) SND.master.gain.value = 0;
+  try{ localStorage.setItem(SAVE_KEY+"/snd", SND.on ? "1":"0"); }catch(e){}
+  return SND.on;
+}
+try{ if(localStorage.getItem(SAVE_KEY+"/snd") === "0") SND.on = false; }catch(e){}
+
+/* ==========================================================================
    SPENDING WHAT YOU GATHER
    Essence used to buy one thing. Now it buys four, and using a body a lot
    makes it permanently better at being that body.
@@ -2608,6 +2785,7 @@ function dealDamage(att, def, mul, o){
         G.freeze = Math.max(G.freeze, 110);
         G.shake += 0.5;
         shock(def.x, def.y+1.0, def.z, 2.4, GOLD3, 380);
+        SFX.parry(def.x, def.z);
         G.pops.push({x:def.x, y:def.y+def.height*1.1, z:def.z, txt:"PARRY", t:0, life:900,
                      col:"#F7BC46", size:22});
         if(att.hp<=0) killEnt(att);
@@ -2616,6 +2794,7 @@ function dealDamage(att, def, mul, o){
       }
       dmg = Math.max(1, Math.round(dmg*BLOCK_CUT));
       def.nrg -= 14;
+      SFX.block(def.x, def.z);
       spark(def.x, def.y+1.0, def.z, 5, GUARD3);
       if(def.nrg <= 0){                              /* guard broken */
         def.nrg = 0; def.blocking = false;
@@ -2658,6 +2837,7 @@ function dealDamage(att, def, mul, o){
   /* the world stops for a breath when something really lands */
   if(att.team === "you" && (isCrit || dmg > def.maxHp*0.09))
     G.freeze = Math.max(G.freeze, isCrit ? 95 : 65);
+  SFX.hit(def.x, def.z, dmg > def.maxHp*0.07, isCrit);
   popNumber(def, dmg, isCrit, att.team==="you");
   spark(def.x, def.y + def.height*0.62, def.z, isCrit?14:7, att.team==="you"?SPARK_A:SPARK_B);
   if(att.team==="you"){ G.combo++; G.comboT = now()+2200; G.surge = Math.min(100, G.surge + dmg/def.maxHp*14); }
@@ -2670,6 +2850,7 @@ function killEnt(e){
   if(e.dead) return;
   e.dead = true; e.deadT = now();
   burst(e.x, e.y+e.height*0.5, e.z, 30, e.pal.c3);
+  SFX.down(e.x, e.z);
   G.shake = Math.min(1, G.shake + (e.boss?.9:.28));
   if(e.team==="foe") onFoeDown(e); else if(e===G.player) onHostDown();
 }
@@ -2747,17 +2928,20 @@ function useAbility(e, slot){
       coneHit(e, reach, a.arc, mul, o);
       splashCars(e, e.x + f.x*reach*0.7, e.z + f.z*reach*0.7, reach*0.6);
       G.arcs.push({e, r:reach, t:0, life:180, c:e.pal.c3, yaw:e.yaw});
+      SFX.swing(e);
       break;
     }
-    case "shot":   shoot(e, e.yaw, 0, a, o); break;
+    case "shot":   shoot(e, e.yaw, 0, a, o); SFX.shot(e); break;
     case "spread":
       for(let i=0;i<a.count;i++) shoot(e, e.yaw + (i-(a.count-1)/2)*(a.arc/Math.max(1,a.count-1)), 0, a, o);
+      SFX.shot(e);
       break;
     case "beam": {
       const len = a.len*U_LEN, wid = a.wid*U_WID;
       G.beams.push({x:e.x, y:e.y+e.height*0.62, z:e.z, yaw:e.yaw, len, wid, c:e.pal.c3, t:0, life:210});
       rayHit(e, len, wid, mul, o);
       for(let s2=0;s2<4;s2++) splashCars(e, e.x+f.x*len*(s2+1)/4, e.z+f.z*len*(s2+1)/4, wid);
+      SFX.beam(e);
       G.shake += .22;
       break;
     }
@@ -2766,6 +2950,7 @@ function useAbility(e, slot){
       shock(e.x, e.y+0.3, e.z, R, e.pal.c3, 420);
       sphereHit(e, e.x, e.y, e.z, R, mul, o);
       splashCars(e, e.x, e.z, R);
+      SFX.slam(e.x, e.z, R);
       burst(e.x, e.y+0.6, e.z, 22, e.pal.c3);
       G.shake += Math.min(.85, R/16);
       break;
@@ -2990,6 +3175,7 @@ function enemyThink(e, dt){
     else {
       /* wind up first, so it can be blocked, parried or rolled */
       e.tell = {slot, at: now() + (e.boss ? 520 : 440)};
+      SFX.tell(e.x, e.z);
       e.mx = e.mz = 0;
     }
     e.atkT = now() + (e.boss?260:460) + Math.random()*320;
@@ -3033,6 +3219,11 @@ function stepEnt(e, dts){
     e.vz += (tz-e.vz)*Math.min(1, dts*accel);
   }
   e.moving = Math.hypot(e.vx,e.vz) > 1.2;
+  if(e === G.player){
+    if(e.moving && e.grounded && !e.fly) SFX.step(e);
+    if(e.grounded && e.wasAir) SFX.land(e);
+    e.wasAir = !e.grounded;
+  }
 
   /* vertical */
   if(e.fly){
@@ -3106,6 +3297,7 @@ function update(dt){
       G.surge = 0; setFx(p,"surge", 5000 + vesselLevel("surge")*1000);
       ["burn","bleed","weaken","mark","stun"].forEach(k=>p.fx[k]=0);
       p.nrg = p.maxNrg; shock(p.x,p.y+0.4,p.z,4,GOLD3,700); G.shake += .7;
+      SFX.surge();
       feed("BURN THROUGH — the vessel stops being careful","big");
     }
     input.surgeGo = false;
@@ -3443,6 +3635,7 @@ function completeMission(){
     }
     shock(p.x, p.y+0.4, p.z, 4, GOLD3, 700);
   }
+  SFX.reward();
   feed("MISSION COMPLETE — +"+gain+" essence", "big");
   if(S.missionsDone % 3 === 0){ S.missionRound = (S.missionRound||0)+1; feed("New work has come up", ""); }
   G.mission = null;
@@ -3567,6 +3760,7 @@ function splashCars(att, x, z, r){
       burst(c.x, 1.4, c.z, 34, srgb("#FF8A3D"));
       shock(c.x, 0.4, c.z, 4.5, srgb("#FF8A3D"), 620);
       G.shake += 0.55; G.freeze = Math.max(G.freeze, 55);
+      SFX.boom(c.x, c.z);
       G.pops.push({x:c.x, y:2.6, z:c.z, txt:"WRECKED", t:0, life:900, col:"#FF8A3D", size:15});
     }
   }
@@ -4243,6 +4437,7 @@ hideStick();
 
 /* the canvas is the only thing under the HUD, so it owns look and move */
 UI.addEventListener("pointerdown", ev=>{
+  audioInit();
   touchMode(ev.pointerType!=="mouse");
   if(SCREENS.firstChild) return;
   if(ev.pointerType==="mouse" && ev.button===2){ input.block = 1; ev.preventDefault(); return; }
@@ -4351,6 +4546,7 @@ function becomeHost(id){
     setFx(G.player, "iframe", 1200);
     G.player.hp = G.player.maxHp;
     shock(G.player.x, G.player.y+0.9, G.player.z, 4.0, G.player.pal.c3, 620);
+    SFX.become();
     feed((old ? "You let go of "+old.b.name+" and take " : "You take ") + G.player.b.name, "big");
   }
   buildHostHud();
@@ -4875,6 +5071,10 @@ function rulesTab(){
       <p class="note"><b>Essence and levels.</b> Every kill feeds every host you are carrying. Levels are permanent.</p>
     </div>
     <div class="divider" style="margin:14px 0"></div>
+    <div class="eyebrow">Sound</div>
+    <p class="note" style="margin:6px 0 10px">Every noise in here is synthesised as it plays — there are no audio files.</p>
+    <button class="btn btn--sm ${SND.on?"btn--go":""}" data-act="sound">${SND.on?"On":"Off"}</button>
+    <div class="divider" style="margin:14px 0"></div>
     <div class="eyebrow">Picture quality</div>
     <p class="note" style="margin:6px 0 10px">Drop this if the frame rate is uneven. Low turns off shadows and bloom.</p>
     <div class="row">
@@ -4920,6 +5120,7 @@ function downHtml(){
 SCREENS.addEventListener("click", ev=>{
   const t = ev.target.closest("[data-act],[data-tab],[data-become],[data-gear],[data-ai],[data-sector],[data-start],[data-cat],[data-quality],[data-mission],[data-abil],[data-vessel],[data-geargrade]");
   if(!t) return;
+  audioInit(); SFX.ui();
   const d = t.dataset;
 
   if(d.start){
@@ -4935,6 +5136,7 @@ SCREENS.addEventListener("click", ev=>{
   if(d.act==="continue"){ enterSector(S.sector||"hk"); closeScreen(); return; }
   if(d.act==="close"){ closeScreen(); return; }
   if(d.act==="abandon"){ abandonMission(); openScreen("pause"); return; }
+  if(d.act==="sound"){ audioToggle(); openScreen("pause"); return; }
   if(d.abil){ upgradeAbility(S.host, d.abil); openScreen("pause"); return; }
   if(d.vessel){ upgradeVessel(d.vessel); openScreen("pause"); return; }
   if(d.geargrade){ upgradeGear(d.geargrade); openScreen("pause"); return; }
@@ -5077,6 +5279,7 @@ function frame(ts){
   if(!G.paused) update(dt);
   renderScene();
   updateHud();
+  audioTick();
 }
 
 function boot(){
