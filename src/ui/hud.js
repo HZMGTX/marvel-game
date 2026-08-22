@@ -73,7 +73,10 @@ function updateHud(){
     const slot = btn.dataset.ab;
     const {a,name} = abilityOf(p, slot);
     const key = {light:"Z",power:"X",util:"C",ult:"V"}[slot];
-    const short = name.length>12 ? name.split(" ")[0] : name;
+    /* a name has to fit inside a circle: split it, or clip it, but never spill */
+    const short = name.length > 11 && name.includes(" ") ? name.split(" ")[0]
+                : name.length > 11 ? name.slice(0, 10) + "\u2026"
+                : name;
     el("lab-"+slot).innerHTML = short + `<small>${key}${a.cost?" · "+a.cost:""}</small>`;
     const left = Math.max(0, (p.cds[slot]||0) - G.t);
     btn.querySelector(".cool").style.transform = `scaleY(${Math.max(0,Math.min(1,left/a.cd))})`;

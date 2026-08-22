@@ -27,12 +27,12 @@ function update(dt){
       feed(p.b.name+" leaves the ground","good");
     }
     else if(!input.fly && p.fly){ p.fly = false; p.dive = 0; p.lift = 0; p.diveArmed = false; }
-    if(!p.fly && input.jump && p.grounded){ p.vy = JUMP; p.grounded = false; }
+    if(!p.fly && p.grounded && pressed("jump")){ p.vy = JUMP; p.grounded = false; }
     p.blocking = !!input.block && !hasFx(p,"stun") && p.nrg > 0 && !p.rollT;
     if(p.blocking && !p.wasBlocking) p.blockStart = now();
     p.wasBlocking = p.blocking;
-    if(input.dodge && !p.canFly) startRoll(p, mv);
-    if(!p.blocking) for(const slot of ["light","power","util","ult"]) if(input[slot]) useAbility(p, slot);
+    if(!p.canFly && pressed("dodge")) startRoll(p, mv);
+    if(!p.blocking) for(const slot of ["light","power","util","ult"]) if(pressed(slot)) useAbility(p, slot);
     if(input.surgeGo && G.surge>=100){
       G.surge = 0; setFx(p,"surge", 5000 + vesselLevel("surge")*1000);
       ["burn","bleed","weaken","mark","stun"].forEach(k=>p.fx[k]=0);
@@ -41,6 +41,7 @@ function update(dt){
       feed("BURN THROUGH — the vessel stops being careful","big");
     }
     input.surgeGo = false;
+    clearTaps();                       /* anything not read this frame is stale */
   }
 
   if(G.lockTarget && (G.lockTarget.dead || !p || distXZ(G.lockTarget,p) > 45)) G.lockTarget = null;

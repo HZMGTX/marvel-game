@@ -407,6 +407,17 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
       zero(); G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9;
     })();
 
+    // a press is an edge as well as a level
+    (()=>{
+      clearTaps();
+      tapped.light = true;
+      const once = pressed("light"), twice = pressed("light");
+      input.power = 1; const held1 = pressed("power"), held2 = pressed("power");
+      input.power = 0;
+      tapped.ult = true; clearTaps();
+      o.tapLatch = once && !twice && held1 && held2 && !pressed("ult");
+    })();
+
     // sound
     audioInit(); o.sound = SND.ready;
 
@@ -469,7 +480,53 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   ok("a small hop does not", r.softLanding);
   ok("the air readout reads", r.flyHud && r.flyHudHides);
   ok("audio ready", r.sound);
+  ok("a press is an edge as well as a level", r.tapLatch);
   ok("save round-trips", r.save);
+
+  /* --- and the same game on a phone --------------------------------------- */
+  const mctx = await b.newContext({viewport:{width:390,height:844}, isMobile:true,
+                                   hasTouch:true, deviceScaleFactor:2});
+  const m = await mctx.newPage(); m.setDefaultTimeout(25000);
+  m.on("pageerror", e=>errs.push("MOBILE PAGEERROR: "+e.message));
+  m.on("console", e=>{ if(e.type()==="error"&&!/net::/.test(e.text())) errs.push("MOBILE CONSOLE: "+e.text()); });
+  await m.goto(process.env.GAME_URL || ("file://" + require("path").resolve(__dirname, "../index.html")));
+  await m.waitForTimeout(400);
+  await m.evaluate(()=>{ quality="low"; resize(); });
+  await m.tap('[data-start="luke-cage"]');
+  await m.waitForTimeout(1400);
+  await m.evaluate(()=>{ G.player.ai = AI_LIST[0]; G.lastCombat = G.t; updateHud(); });
+  await m.waitForTimeout(200);
+
+  const swing0 = await m.evaluate(()=>G.player.swingT);
+  await m.tap('[data-ab="light"]');                 /* a quick tap, not a hold */
+  await m.waitForTimeout(300);
+  const mob = await m.evaluate(()=>{
+    const box = id => { const r2 = el(id).getBoundingClientRect();
+                        return {t:r2.top, b:r2.bottom, l:r2.left, r:r2.right}; };
+    const over = (a2,b2) => !(a2.r <= b2.l || b2.r <= a2.l || a2.b <= b2.t || b2.b <= a2.t);
+    const zones = {self:box("hud-self"), sector:box("hud-sector"), map:box("minimap"),
+                   become:box("hud-squad"), pad:box("pad"), extra:box("extra")};
+    let spill = 0;
+    document.querySelectorAll("#pad .abtn").forEach(btn=>{
+      const lab = btn.querySelector("span[id^=lab-]");
+      if(lab && lab.scrollWidth > btn.clientWidth + 1) spill++;
+    });
+    return {
+      touch: document.body.dataset.touch === "1",
+      live: !!G.player && G.ents.length > 1 && drawCalls > 40,
+      swing: G.player.swingT,
+      clean: !over(zones.sector, zones.map) && !over(zones.self, zones.become)
+             && !over(zones.pad, zones.extra),
+      spill,
+      onScreen: zones.pad.r <= 390 && zones.extra.r <= 390 && zones.map.r <= 390
+                && zones.pad.b <= 844
+    };
+  });
+  await mctx.close();
+  ok("the phone build comes up in touch mode", mob.touch && mob.live);
+  ok("nothing on the phone HUD collides", mob.clean && mob.onScreen);
+  ok("no ability label spills its button", mob.spill === 0, "spilled: "+mob.spill);
+  ok("a quick tap fires an ability", mob.swing !== swing0);
 
   await ctx.close(); await b.close();
   console.log("\n" + (errs.length ? "RUNTIME ERRORS:\n"+errs.join("\n") : "no runtime errors"));

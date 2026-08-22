@@ -176,16 +176,16 @@ input[type="search"],select{font:inherit;font-size:13px;padding:8px 10px;border:
   .self__name{font-size:10px}
   .self__sub{font-size:8px}
   .bar--sm{height:7px}
-  #hud-squad{top:calc(52px + env(safe-area-inset-top,0px))}
+  #hud-squad{top:calc(100px + env(safe-area-inset-top,0px))}
   .slot{width:34px;height:42px}
   .slot canvas{width:27px;height:27px}
   .slot b{font-size:7px}
   .tag{font-size:8.5px;padding:2px 5px}
   .iconbtn{width:32px;height:32px;font-size:12px}
-  #minimap{top:calc(132px + env(safe-area-inset-top,0px));width:92px;height:92px;overflow:hidden}
+  #minimap{top:calc(150px + env(safe-area-inset-top,0px));width:92px;height:92px;overflow:hidden}
   #minimap canvas{width:88px;height:88px}
   #pad{grid-template-columns:repeat(2,58px);grid-template-rows:repeat(2,58px);gap:7px}
-  .abtn{font-size:9px}
+  .abtn{font-size:9px;word-break:break-word;hyphens:auto}
   .abtn small{font-size:7px}
   #extra{bottom:calc(146px + var(--safe-b))}
   .xbtn{font-size:9px;padding:6px 9px}

@@ -163,8 +163,8 @@ the street starts lighting itself. After dark a moon takes the sun's place from 
 side, so night still has a direction, a shape and a shadow behind you.
 
 Each sector's palette is written as its *night*; daylight is that same palette lifted to a
-daylight level, so a place keeps its own colour through the whole day. Rain thickens the
-air, dims the sun and wets the asphalt.
+daylight level and pulled part of the way towards a plain daytime tint, so a place keeps its
+character without keeping its dye. Rain thickens the air, dims the sun and wets the asphalt.
 
 ## Sound
 
@@ -225,7 +225,9 @@ npm i playwright
 node test/regress.js
 ```
 
-It exits non-zero on any failure. Fifty-four checks, currently all passing. Point it at a
+It exits non-zero on any failure. Fifty-nine checks, currently all passing — the last four
+of them in a real 390×844 touch context, checking that the phone build comes up, that nothing
+on its HUD collides or runs off the edge, and that a quick tap fires an ability. Point it at a
 different build with `GAME_URL` — the bundle in `dist/` has to pass exactly the same set.
 
 ## Unofficial fan project

@@ -7,10 +7,17 @@ const DAY_LEN = 480000;                    /* eight minutes for a full turn */
 /* A sector's authored palette is its night. Daylight is that same palette
    lifted to a daylight level — the hue is kept, the level is not — so Hell's
    Kitchen at noon is still Hell's Kitchen, and still bright. */
-const _lift = [0,0,0];
-function liftHue(c, level, out){
+/* A night palette is far more saturated than daylight ever is, so lifting one
+   by ratio alone turns noon into ink. Each lift also pulls part of the way
+   towards a plain daytime tint — the sector keeps its character, not its dye. */
+const DAY_TINT = {
+  sky:[0.62,0.88,1.50], top:[0.40,0.75,1.85], fog:[0.90,0.96,1.14],
+  amb:[0.85,0.95,1.20], grd:[1.08,1.00,0.92]
+};
+function liftHue(c, level, tint, t){
   const m = (c[0] + c[1] + c[2])/3 || 1e-4, k = level/m;
-  out[0] = c[0]*k; out[1] = c[1]*k; out[2] = c[2]*k;
+  const out = [0,0,0];
+  for(let i=0;i<3;i++) out[i] = (c[i]*k)*(1-t) + level*tint[i]*t;
   return out;
 }
 const NIGHT_SKY = [0.020,0.030,0.080], NIGHT_TOP = [0.010,0.012,0.042],
@@ -43,11 +50,11 @@ function applyDayNight(){
   w.night = night;
   /* a clear day sees a long way; the murk belongs to dusk and to rain */
   w.fogD = w.base.fogD * (1 - 0.55*day) * (G.weather === "rain" ? 1.5 : 1);
-  const skyD = liftHue(b.sky,    0.44, [0,0,0]);
-  const topD = liftHue(b.skyTop, 0.24, [0,0,0]);
-  const fogD = liftHue(b.fog,    0.20, [0,0,0]);
-  const ambD = liftHue(b.skyAmb, 0.30, [0,0,0]);
-  const grdD = liftHue(b.grdAmb, 0.16, [0,0,0]);
+  const skyD = liftHue(b.sky,    0.44, DAY_TINT.sky, 0.60);
+  const topD = liftHue(b.skyTop, 0.24, DAY_TINT.top, 0.60);
+  const fogD = liftHue(b.fog,    0.20, DAY_TINT.fog, 0.75);
+  const ambD = liftHue(b.skyAmb, 0.30, DAY_TINT.amb, 0.70);
+  const grdD = liftHue(b.grdAmb, 0.16, DAY_TINT.grd, 0.70);
   for(let i=0;i<3;i++){
     const dayC = b.sun[i] * (0.24 + up*1.00);
     const warmTint = [1.28, 0.86, 0.55][i];
