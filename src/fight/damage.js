@@ -122,6 +122,7 @@ function dealDamage(att, def, mul, o){
   }
   /* precognition also reads the nastier riders coming */
   const rider = mindFx(def,"foresee") && Math.random() < 0.30 ? 0 : 1;
+  launchInto(def, o);
   if(o.bleed && rider) setFx(def,"bleed",3200);
   if(o.burn  && rider) setFx(def,"burn",3000);
   if(o.weaken&& rider) setFx(def,"weaken",3600);

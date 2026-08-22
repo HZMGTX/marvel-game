@@ -23,6 +23,7 @@ function enemyThink(e, dt){
   else { const s = Math.sin(now()/900 + e.size*7); e.mx = -dz/d*s*.7; e.mz = dx/d*s*.7; }
   if(p.y > e.y + 3 && e.canFly) e.fly = true;
   else if(e.fly && Math.abs(p.y-e.y) < 1.4) e.fly = false;
+  groundAnswersAir(e, p, d);
   if(hasFx(e,"stun")){ e.mx=e.mz=0; return; }
   if(!e.engaged){
     if(e.boss || attackerCount() < MAX_ATTACKERS){ e.engaged = true; e.engagedT = now()+2600+Math.random()*1800; }

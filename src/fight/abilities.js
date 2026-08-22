@@ -36,7 +36,7 @@ function useAbility(e, slot){
     e.comboStep = step; e.comboT = now();
     mul = mul * COMBO_MUL[step];
     if(o.knock) o.knock *= COMBO_KNOCK[step];
-    if(step === 2){ o.knock = (o.knock||120)*1.2; e.cds.light = now() + a.cd*1.6; }
+    if(step === 2){ o.knock = (o.knock||120)*1.2; o.launch = true; e.cds.light = now() + a.cd*1.6; }
   }
   a = Object.assign({}, a, {mul});
 
@@ -49,9 +49,10 @@ function useAbility(e, slot){
       SFX.swing(e);
       break;
     }
-    case "shot":   shoot(e, e.yaw, 0, a, o); SFX.shot(e); break;
+    case "shot":   shoot(e, e.yaw, aimPitchFor(e), a, o); SFX.shot(e); break;
     case "spread":
-      for(let i=0;i<a.count;i++) shoot(e, e.yaw + (i-(a.count-1)/2)*(a.arc/Math.max(1,a.count-1)), 0, a, o);
+      const pit = aimPitchFor(e);
+      for(let i=0;i<a.count;i++) shoot(e, e.yaw + (i-(a.count-1)/2)*(a.arc/Math.max(1,a.count-1)), pit, a, o);
       SFX.shot(e);
       break;
     case "beam": {
@@ -125,7 +126,7 @@ function coneHit(e, reach, arc, mul, o){
     if(!canHit(e,t)) continue;
     const dx=t.x-e.x, dz=t.z-e.z, d=Math.hypot(dx,dz);
     if(d > reach + t.rad) continue;
-    if(Math.abs(t.y - e.y) > 2.0) continue;
+    if(Math.abs(t.y - e.y) > vReach(e)) continue;
     if(d>0.01 && (dx/d*f.x + dz/d*f.z) < Math.cos(arc/2)) continue;
     dealDamage(e,t,mul,o);
   }
@@ -146,7 +147,7 @@ function rayHit(e, len, wid, mul, o){
     if(along < 0 || along > len) continue;
     const perp = Math.abs(dx*f.z - dz*f.x);
     if(perp > wid/2 + t.rad) continue;
-    if(Math.abs(t.y - e.y) > 2.6) continue;
+    if(Math.abs(t.y - e.y) > 2.6 + (e.grounded ? 0 : 1.4)) continue;
     dealDamage(e,t,mul,o);
   }
 }

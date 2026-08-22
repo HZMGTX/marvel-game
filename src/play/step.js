@@ -88,6 +88,9 @@ function stepEnt(e, dts){
   else e.grounded = false;
   if(e.y > 130) e.y = 130;
 
+  if(e.fly && (e.dive||0) >= 0.5) diveStrike(e);
+  else if(e.diveHit) e.diveHit = null;
+
   /* status ticks */
   if(hasFx(e,"burn")  && G.t % 420 < dts*1000) e.hp -= e.maxHp*0.012;
   if(hasFx(e,"bleed") && G.t % 420 < dts*1000) e.hp -= e.maxHp*0.011;

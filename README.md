@@ -69,7 +69,13 @@ spent comes back as forward speed for the next few seconds; the readout in the c
 What goes up lands. Come down hard enough — off a dive, or off a roof — and you land in a
 crouch on a shockwave that knocks over anyone standing near, wrecks parked cars and flattens
 the street furniture. The harder the fall, the wider it lands, and past a certain speed it
-staggers what it hits. A step off a kerb does none of that.
+staggers what it hits. A step off a kerb does none of that. Dive *into* somebody rather than
+into the road and they take the same weight in the chest.
+
+**Height is an advantage, not a hiding place.** Everyone shoots at where you actually are
+rather than dead ahead. A grounded enemy within jumping distance will come up after you; one
+too far or too high will pick something up and throw it. And your third strike in a chain
+launches whoever it hits into the air — bosses excepted — so you can follow them up.
 
 ## Fighting
 
@@ -179,7 +185,7 @@ src/rules/     stats, abilities, progression, artificial minds, the save file
 src/gl/        matrix maths, the WebGL context, the shaders, the draw queue
 src/world/     the city plan, traffic, crowds, weather and the day
 src/body/      palette, skeleton, pose, and gear drawn onto a body
-src/fight/     damage, guards, parries, effects, and what the four slots do
+src/fight/     damage, guards, parries, effects, the air, and what the four slots do
 src/play/      entities, enemy minds, elite roles, the step, the frame, missions, story
 src/render/    the camera, the passes, the effects, the flat overlay
 src/audio/     every sound, synthesised
@@ -219,7 +225,7 @@ npm i playwright
 node test/regress.js
 ```
 
-It exits non-zero on any failure. Forty-seven checks, currently all passing. Point it at a
+It exits non-zero on any failure. Fifty-four checks, currently all passing. Point it at a
 different build with `GAME_URL` — the bundle in `dist/` has to pass exactly the same set.
 
 ## Unofficial fan project

@@ -117,6 +117,99 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
       return Object.values(o.dayLighting).every(Boolean);
     })();
 
+    // the air: hovering is not a free win any more
+    (()=>{
+      const clear = ()=>{ G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9; G.projs.length = 0; };
+      const meleeId  = sectorBeings(G.sector).find(b2=>!ACT[b2.arch].ranged).id;
+      const rangedId = (BEINGS.find(b2=>ACT[b2.arch].ranged)||{}).id;
+      const foe = (id, dx)=>{ const e = makeEnt(id, G.player.x+(dx||3), G.player.z, "foe", {});
+                              G.ents.push(e); return e; };
+      const P = G.player;
+      const home = {x:P.x, y:P.y, z:P.z};        /* put you back where you started */
+
+      clear();                                   /* a shot goes where you are */
+      const sh = foe(rangedId, 10);
+      P.x = sh.x; P.z = sh.z; P.y = sh.y + 12;
+      sh.cds = {}; sh.nrg = sh.maxNrg; useAbility(sh, "light");
+      o.airShotAims = G.projs.length > 0 && G.projs[0].vy > 4;
+
+      clear();                                   /* too high to jump: it throws */
+      const th = foe(meleeId, 3);
+      P.x = th.x + 2; P.z = th.z; P.y = th.y + 22; th.airT = 0;
+      groundAnswersAir(th, P, distXZ(th, P));
+      o.airThrows = G.projs.length === 1 && G.projs[0].vy > 4;
+
+      clear();                                   /* low enough to jump: it jumps */
+      const lp = foe(meleeId, 3);
+      P.x = lp.x + 3; P.z = lp.z; P.y = lp.y + 6;
+      lp.airT = 0; lp.vy = 0; lp.grounded = true;
+      groundAnswersAir(lp, P, distXZ(lp, P));
+      o.airLeaps = lp.vy > 8 && !lp.grounded && G.projs.length === 0;
+
+      clear();                                   /* and once up there it connects */
+      const hi = foe(meleeId, 1.2);
+      hi.grounded = false; hi.y = P.y = 20; hi.x = P.x + 1.2; hi.z = P.z;
+      hi.yaw = Math.atan2(P.x-hi.x, P.z-hi.z);
+      P.hp = P.maxHp; P.fx = {}; P.blocking = false;
+      hi.cds = {}; hi.nrg = hi.maxNrg; useAbility(hi, "light");
+      o.airConnects = P.hp < P.maxHp && vReach({grounded:false}) > vReach({grounded:true});
+
+      clear();                                   /* your finisher lifts them */
+      const lift = foe(meleeId, 1.5);
+      lift.grounded = true; lift.vy = 0; lift.y = groundAt(lift.x, lift.z, lift.rad);
+      P.y = lift.y; P.hp = P.maxHp; P.fx = {};
+      P.yaw = Math.atan2(lift.x-P.x, lift.z-P.z);
+      P.cds = {}; P.nrg = P.maxNrg; P.comboStep = 1; P.comboT = G.t;
+      useAbility(P, "light");
+      const boss = foe(meleeId, 1.5); boss.boss = true; boss.grounded = true; boss.vy = 0;
+      launchInto(boss, {launch:true});
+      o.airLaunch = P.comboStep === 2 && lift.vy > 5 && !lift.grounded
+                    && boss.vy === 0 && boss.grounded;
+
+      clear();                                   /* and a dive lands on people too */
+      const tgt = foe(meleeId, 0.6);
+      tgt.hp = tgt.maxHp;
+      P.fly = true; P.dive = 1; P.vy = -30; P.y = tgt.y + 0.6; P.x = tgt.x - 0.6; P.z = tgt.z;
+      P.diveHit = null;
+      diveStrike(P);
+      const once = tgt.maxHp - tgt.hp;
+      diveStrike(P);
+      o.airDive = once > 0 && (tgt.maxHp - tgt.hp) === once;
+      P.fly = false; P.dive = 0; P.diveHit = null;
+
+      /* the whole point: thirteen seconds of hovering over a crowd is not free */
+      const hover = (height)=>{
+        clear();
+        const melee = sectorBeings(G.sector).filter(b2=>!ACT[b2.arch].ranged);
+        for(let i=0;i<4;i++){
+          const a2 = i/4*6.283;
+          const e = makeEnt(melee[i%melee.length].id, P.x+Math.sin(a2)*4, P.z+Math.cos(a2)*4, "foe", {});
+          e.engaged = true; e.engagedT = 1e12; G.ents.push(e);
+        }
+        Object.keys(input).forEach(k=>{ if(typeof input[k]==="number") input[k]=0; });
+        input.fly = 1; P.fly = true; P.hp = P.maxHp; P.fx = {}; P.vx = P.vz = 0;
+        const gy = groundAt(P.x, P.z, P.rad);
+        let touched = 0;
+        for(let i=0;i<400;i++){
+          P.y = gy + height; P.vy = 0; P.fx.iframe = 0;
+          const before = P.hp;
+          update(33);
+          if(P.hp < before) touched++;
+          P.hp = P.maxHp;
+        }
+        Object.keys(input).forEach(k=>{ if(typeof input[k]==="number") input[k]=0; });
+        P.fly = false;
+        return touched;
+      };
+      o.hoverCosts = {low: hover(6), high: hover(20)};
+      o.airHoverNotFree = o.hoverCosts.low > 5 && o.hoverCosts.high > 5;
+
+      clear();
+      P.x = home.x; P.y = home.y; P.z = home.z;
+      P.hp = P.maxHp; P.fx = {}; P.vx = P.vy = P.vz = 0; P.grounded = true;
+      P.comboStep = 0; P.cds = {}; P.blocking = false;
+    })();
+
     // artificial minds: all twelve do something you can see
     (()=>{
       const clear = ()=>{ G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9; };
@@ -342,6 +435,13 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   ok("city populated", r.city.cars>0 && r.city.civs>0 && r.city.props>0, JSON.stringify(r.city));
   ok("civilians replenish", r.civsReturn);
   ok("a day that is actually a day", r.dayNight, JSON.stringify(r.dayLighting));
+  ok("shots aim where the target is", r.airShotAims);
+  ok("a grounded enemy throws at a high hover", r.airThrows);
+  ok("and jumps at a low one", r.airLeaps);
+  ok("a swing reaches higher off the ground", r.airConnects);
+  ok("the finisher launches, but not a boss", r.airLaunch);
+  ok("a dive lands on people, once", r.airDive);
+  ok("hovering over a crowd is not free", r.airHoverNotFree, JSON.stringify(r.hoverCosts));
   ok("twelve minds, all of them wired", r.mindsAllWired && r.mindCount);
   ok("orbital strike hits the first blow only", r.mindStrike);
   ok("plating shields you when a fight starts", r.mindPlating);
