@@ -224,8 +224,8 @@ const WHITE3 = [1,1,1], EYE3 = [0.04,0.04,0.06];
    Levitation is a cloak. */
 const GEAR_SHAPE = [
   [/mjolnir|stormbreaker|jarnbjorn|universal weapon|crowbar/i, "hammer"],
-  [/sword|blade|glaive|soulsword|godslayer|ebony|twilight|dragonfang/i, "sword"],
-  [/spear|gungnir|trident|staff|wand|sceptre|crowbar/i, "staff"],
+  [/sword|blade|glaive|soulsword|godslayer|ebony|twilight|dragonfang|katana|knife|hofund|\bsai\b/i, "sword"],
+  [/spear|gungnir|trident|staff|wand|sceptre|crowbar|\bclubs?\b|baton|\bstick\b/i, "staff"],
   [/\bgun\b|rifle|arsenal|element gun|blaster|repulsor/i, "gun"],
   [/shield/i, "shield"],
   [/board/i, "board"],
