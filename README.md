@@ -1,11 +1,11 @@
 # Multiverse Vessel
 
-A single-file 3D action game. You are a spark with no body of your own. You can hold on to
-a person, and while you do, everything they can do is something you can do.
+A 3D action game that runs in a browser. You are a spark with no body of your own. You can
+hold on to a person, and while you do, everything they can do is something you can do.
 
-**616 beings. 74 pieces of gear. 30 artificial minds. 30 sectors.** One HTML file, no
-libraries, no art files, no audio files — every character, every building, every effect and
-every sound is generated from code at runtime.
+**616 beings. 74 pieces of gear. 30 artificial minds. 30 sectors.** No libraries, no art
+files, no audio files — every character, every building, every effect and every sound is
+generated from code at runtime.
 
 Open `index.html` in a browser. That's the whole install.
 
@@ -48,6 +48,7 @@ already running. Finish three and new work comes in.
 | Ultimate | `V` | |
 | Jump | `Space` | JUMP |
 | Fly | hold `Shift` | FLY |
+| Climb / dive | `Space` / `Ctrl` while flying | JUMP / DOWN |
 | Surge | `Q` | SURGE |
 | Guard / parry | hold `F` or right mouse | GUARD |
 | Roll | `Shift` (if you can't fly) | ROLL |
@@ -55,8 +56,20 @@ already running. Finish three and new work comes in.
 | Change body | `B` | the portrait |
 | Menu | `Esc` | ☰ |
 
-Scroll to pull the camera in or out. Space climbs and Ctrl drops while flying. Jump onto
-the rooftops — they are solid.
+Scroll to pull the camera in or out. Jump onto the rooftops — they are solid.
+
+## Flying
+
+Flight carries momentum. Let go of the stick and you coast instead of stopping dead, and
+you lean into your turns. Hold `Ctrl` and you stop flying level and start **diving** —
+head down, arms in, up to about 120 km/h. Level out at the bottom and the drop you just
+spent comes back as forward speed for the next few seconds; the readout in the corner says
+`SWOOP` while you still have it.
+
+What goes up lands. Come down hard enough — off a dive, or off a roof — and you land in a
+crouch on a shockwave that knocks over anyone standing near, wrecks parked cars and flattens
+the street furniture. The harder the fall, the wider it lands, and past a certain speed it
+staggers what it hits. A step off a kerb does none of that.
 
 ## Fighting
 
@@ -99,6 +112,29 @@ parry, whooshes, beams, explosions, footsteps, a low city drone and rain that fa
 the weather. There are no audio files in this repository. It starts on your first tap,
 because that is the rule browsers hold you to, and there is an on/off switch in Rules.
 
+## How the source is laid out
+
+`index.html` is a page shell: the HUD markup and a list of forty-two source files in the
+order they load. Nothing is bundled, transpiled or minified — what you read is what runs,
+and you can open any one file and know what it holds from its first line.
+
+```
+src/data/      the roster, the gear, the minds, and the code that builds them
+src/rules/     stats, abilities, progression, the save file
+src/gl/        matrix maths, the WebGL context, the shaders, the draw queue
+src/world/     the city plan, traffic, crowds, weather and the day
+src/body/      palette, skeleton, pose, and gear drawn onto a body
+src/fight/     damage, guards, parries, effects, and what the four slots do
+src/play/      entities, enemy minds, the step, the frame, missions, story
+src/render/    the camera, the passes, the effects, the flat overlay
+src/audio/     every sound, synthesised
+src/ui/        controls, HUD, screens, and what their buttons do
+```
+
+If you would rather have one file — to email it, to drop it on a USB stick, to put it
+somewhere that only takes a single upload — `node tools/bundle.js` folds the whole thing
+back into `dist/multiverse-vessel.html`, still readable, still with no dependencies.
+
 ## Under the hood
 
 - **Renderer**: hand-written WebGL. Sun with a real shadow map (packed depth, 3×3 PCF),
@@ -128,7 +164,8 @@ npm i playwright
 node test/regress.js
 ```
 
-It exits non-zero on any failure. Twenty-one checks, currently all passing.
+It exits non-zero on any failure. Twenty-nine checks, currently all passing. Point it at a
+different build with `GAME_URL` — the bundle in `dist/` has to pass exactly the same set.
 
 ## Unofficial fan project
 

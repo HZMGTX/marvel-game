@@ -101,6 +101,57 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
                         G.timeOfDay=0.75; applyDayNight(); const d=G.world.sunCol.reduce((a,c)=>a+c,0);
                         G.timeOfDay=0.30; applyDayNight(); return d < n; })();
 
+    // flight: a dive builds speed, pulling out spends it forward, landing lands
+    (()=>{
+      const step = (n)=>{ for(let i=0;i<n;i++) update(33); };
+      const zero = ()=>Object.keys(input).forEach(k=>{ if(typeof input[k]==="number") input[k]=0; });
+      const flier = BEINGS.find(b2=>canFly(b2));
+      if(!S.unlocked.includes(flier.id)) S.unlocked.push(flier.id);
+      G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9;
+      becomeHost(flier.id);
+      const P = G.player;
+      zero(); input.fly = 1; input.jump = 1;
+      const y0 = P.y; step(45);
+      o.flyClimbs = P.fly && P.y - y0 > 6;
+
+      input.jump = 0; input.up = 1; step(40);
+      const s1 = Math.hypot(P.vx, P.vz);
+      input.up = 0; step(6);
+      o.flyCoasts = s1 > 4 && Math.hypot(P.vx, P.vz) > s1*0.7;   /* momentum, not a dead stop */
+
+      P.yaw = 0; P.vx = 9; P.vz = 0; step(12); const bR = P.bank;
+      P.vx = -9; step(24);
+      o.flyBanks = bR < -0.1 && P.bank > 0.1;                    /* leans both ways */
+
+      P.y = 95; P.vy = 0; P.vx = P.vz = 0; P.dive = 0; P.boost = 0;
+      input.down2 = 1; step(30);
+      o.flyDives = P.dive > 0.9 && P.vy < -25;
+      input.down2 = 0; step(2);
+      const b1 = P.boost; step(2);
+      o.flySwoops = b1 > 0.5 && P.boost <= b1;                   /* paid once, then decays */
+
+      zero(); input.fly = 0; P.fly = false; P.dive = 0;
+      G.ents = G.ents.filter(e=>e.team==="you");
+      const mark = makeEnt(S.unlocked[0], P.x+2.0, P.z, "foe", {}); G.ents.push(mark);
+      mark.hp = mark.maxHp; const hp0 = mark.hp;
+      P.y = groundAt(P.x,P.z,P.rad) + 55; P.vy = -2; P.vx = P.vz = 0; P.grounded = false;
+      G.rings.length = 0; G.shake = 0;
+      let guard = 0; while(!P.grounded && guard++ < 400) update(33);
+      o.hardLanding = G.rings.length > 0 && G.shake > 0.3 && mark.hp < hp0 && P.landK > 0.5;
+
+      G.rings.length = 0; G.shake = 0; P.landK = 0;
+      P.y = groundAt(P.x,P.z,P.rad) + 1.2; P.vy = 0; P.grounded = false;
+      guard = 0; while(!P.grounded && guard++ < 200) update(33);
+      o.softLanding = G.rings.length === 0 && G.shake === 0;      /* a hop is not an event */
+
+      P.fly = true; P.y = 40; P.vx = 20; P.vz = 0; P.vy = -5; P.dive = 0.8;
+      updateHud();
+      o.flyHud = /ALT 40m/.test(el("tag-air").textContent) && /DIVE/.test(el("tag-air").textContent);
+      P.fly = false; updateHud();
+      o.flyHudHides = el("tag-air").style.display === "none";
+      zero(); G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9;
+    })();
+
     // sound
     audioInit(); o.sound = SND.ready;
 
@@ -129,6 +180,14 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   ok("city populated", r.city.cars>0 && r.city.civs>0 && r.city.props>0, JSON.stringify(r.city));
   ok("civilians replenish", r.civsReturn);
   ok("night darker than noon", r.dayNight);
+  ok("flight climbs", r.flyClimbs);
+  ok("flight carries momentum", r.flyCoasts);
+  ok("flight banks into a turn", r.flyBanks);
+  ok("a dive builds speed", r.flyDives);
+  ok("pulling out pays once", r.flySwoops);
+  ok("a hard landing lands", r.hardLanding);
+  ok("a small hop does not", r.softLanding);
+  ok("the air readout reads", r.flyHud && r.flyHudHides);
   ok("audio ready", r.sound);
   ok("save round-trips", r.save);
 
