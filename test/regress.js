@@ -298,6 +298,78 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
       P.comboStep = 0; P.cds = {}; P.blocking = false;
     })();
 
+    /* all five kinds of work have to be finishable. A mission type that cannot
+       be completed is a job a player takes and can never put down. */
+    (()=>{
+      const P = G.player;
+      const bad = [];
+      for(const kind of Object.keys(MISSION_DEFS)){
+        const base = missionOffers(G.sector)[0];
+        const pool = sectorBeings(G.sector).filter(b2=>b2.id !== sectorBoss(G.sector).id);
+        const held = pool.flatMap(b2=>(GEAR_BY_OWNER[b2.id]||[]).map(g=>({g,b:b2})))[0];
+        const m = Object.assign({}, base, {kind, id:"probe/"+kind,
+          targetId: pool[0].id, count: 3,
+          gearId: kind==="recover" && held ? held.g.id : null,
+          gearOwner: kind==="recover" && held ? held.b.id : null});
+        G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9;
+        G.drops.length = 0; G.mission = null;
+        const before = S.essence, doneBefore = S.missionsDone || 0;
+        try{
+          if(startMission(m) === false || !G.mission){ bad.push(kind+": would not start"); continue; }
+          const M = G.mission;
+          if(kind === "hunt"){ M.ents[0].hp = 1; killEnt(M.ents[0]); updateMission(33); }
+          else if(kind === "chase"){ P.x = M.ents[0].x; P.z = M.ents[0].z; updateMission(33); }
+          else if(kind === "recover"){ G.drops.length = 0; updateMission(33); }
+          else if(kind === "hold"){ P.x = M.marker.x; P.z = M.marker.z;
+                                    for(let i=0;i<400 && G.mission && !G.mission.done;i++) updateMission(120); }
+          else if(kind === "rescue"){ for(const c of M.ents){ P.x = c.x; P.z = c.z; updateMission(33); } }
+          if(!M.done) bad.push(kind+": never finished");
+          else if(S.essence <= before) bad.push(kind+": paid nothing");
+          else if((S.missionsDone||0) <= doneBefore) bad.push(kind+": not counted");
+        }catch(e){ bad.push(kind+": "+e.message); }
+        G.mission = null;
+      }
+      o.missionKinds = bad;
+      G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9;
+      P.hp = P.maxHp; P.fx = {}; P.dead = false; G.ended = false;
+    })();
+
+    /* gear has to reach you the way the game says it does: beat somebody
+       carrying something, it falls where they fell, you walk over it. */
+    (()=>{
+      const clear = ()=>{ G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9;
+                          G.drops.length = 0; };
+      const P = G.player;
+      /* somebody in this sector who owns a piece you have not got */
+      const owner = BEINGS.find(b2=>(GEAR_BY_OWNER[b2.id]||[]).some(g=>!S.gearOwned.includes(g.id)));
+      if(!owner){ o.dropLoop = "everything is already owned"; return; }
+      const piece = GEAR_BY_OWNER[owner.id].find(g=>!S.gearOwned.includes(g.id));
+
+      clear();
+      const e = makeEnt(owner.id, P.x + 4, P.z, "foe", {});
+      G.ents.push(e);
+      e.hp = 1; killEnt(e);
+      const dropped = G.drops.length === 1 && G.drops[0].gid === piece.id;
+      const where = dropped && Math.abs(G.drops[0].x - e.x) < 0.01;
+
+      /* not yours until you go and get it */
+      const ownedBefore = S.gearOwned.includes(piece.id);
+      P.x = e.x; P.z = e.z; P.y = e.y;
+      update(33);
+      const ownedAfter = S.gearOwned.includes(piece.id);
+      const cleared = G.drops.length === 0;
+
+      /* and nothing drops twice */
+      clear();
+      const again = makeEnt(owner.id, P.x + 4, P.z, "foe", {});
+      G.ents.push(again); again.hp = 1; killEnt(again);
+      const noDouble = G.drops.length === 0;
+
+      o.dropLoop = dropped && where && !ownedBefore && ownedAfter && cleared && noDouble;
+      clear();
+      P.hp = P.maxHp; P.fx = {}; P.dead = false; G.ended = false;
+    })();
+
     // artificial minds: all twelve do something you can see
     (()=>{
       const clear = ()=>{ G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9; };
@@ -623,6 +695,8 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   ok("the finisher launches, but not a boss", r.airLaunch);
   ok("a dive lands on people, once", r.airDive);
   ok("hovering over a crowd is not free", r.airHoverNotFree, JSON.stringify(r.hoverCosts));
+  ok("all five kinds of work can be finished", r.missionKinds.length===0, r.missionKinds.join(" | "));
+  ok("gear falls where they fell and you can pick it up", r.dropLoop === true, String(r.dropLoop));
   ok("twelve minds, all of them wired", r.mindsAllWired && r.mindCount);
   ok("orbital strike hits the first blow only", r.mindStrike);
   ok("plating shields you when a fight starts", r.mindPlating);

@@ -257,7 +257,7 @@ what Actions does on a private repository when it cannot start a runner. Once Ac
 can run on the repo, put the `push` and `pull_request` triggers back and it works as
 written.
 
-It exits non-zero on any failure. Seventy-eight checks, currently all passing — the last four
+It exits non-zero on any failure. Eighty checks, currently all passing — the last four
 of them in a real 390×844 touch context, checking that the phone build comes up, that nothing
 on its HUD collides or runs off the edge, and that a quick tap fires an ability. Point it at a
 different build with `GAME_URL` — the bundle in `dist/` has to pass exactly the same set.
