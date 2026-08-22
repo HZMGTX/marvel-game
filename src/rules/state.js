@@ -53,6 +53,8 @@ function aiAllowed(ai, being, gear){
 function sectorBeings(id){ return BEINGS.filter(b=>b.sector===id); }
 function sectorIndex(id){ return SECTORS.findIndex(s=>s.id===id); }
 function sectorBoss(id){
+  const named = BY_ID[SECTOR_BOSS[id]];
+  if(named && named.sector === id) return named;
   const pool = sectorBeings(id);
   return pool.slice().sort((a,b)=> b.tier-a.tier || a.name.localeCompare(b.name))[0];
 }

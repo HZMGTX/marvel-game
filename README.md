@@ -3,7 +3,7 @@
 A 3D action game that runs in a browser. You are a spark with no body of your own. You can
 hold on to a person, and while you do, everything they can do is something you can do.
 
-**673 beings. 74 pieces of gear. 30 artificial minds. 30 sectors.** No libraries, no art
+**674 beings. 74 pieces of gear. 30 artificial minds. 30 sectors.** No libraries, no art
 files, no audio files — every character, every building, every effect and every sound is
 generated from code at runtime.
 
@@ -112,6 +112,14 @@ pavement who scatter when a fight starts, street lamps and cars you can wreck, a
 buildings that stand on pillars so you can walk in under them. The sun goes round on an
 eight-minute cycle — dawn, noon, dusk, night with the windows lit — and it rains about
 a third of the time.
+
+## Who is waiting at the end of each one
+
+Each sector has a named antagonist rather than whoever happens to have the highest number:
+Kingpin runs Hell's Kitchen, the Green Goblin is over Queens, Ultron is the one waiting in
+Manhattan, Killmonger in Wakanda, Thanos on Titan, He Who Remains in the TVA, Knull in the
+Bleed and the Living Tribunal above all others. A named boss who is not the strongest thing
+in their own sector — Kingpin is not — gets scaled up to meet the job.
 
 ## What it costs
 
@@ -231,7 +239,7 @@ back into `dist/multiverse-vessel.html`, still readable, still with no dependenc
 ## Checking it still works
 
 `test/regress.js` drives the real game in a real browser and asserts from page state, not
-from screenshots — that the world comes up, that every one of the 673 beings builds, that a body cannot
+from screenshots — that the world comes up, that every one of the 674 beings builds, that a body cannot
 be changed mid-fight, that guarding, parrying and rolling do what they claim, that gear
 stays bound to its owner, that missions start and abandon, that ranks buy, that bosses
 turn, that the city stays populated, and that the save round-trips.
@@ -241,7 +249,7 @@ npm i playwright
 node test/regress.js
 ```
 
-It exits non-zero on any failure. Sixty-seven checks, currently all passing — the last four
+It exits non-zero on any failure. Seventy-two checks, currently all passing — the last four
 of them in a real 390×844 touch context, checking that the phone build comes up, that nothing
 on its HUD collides or runs off the edge, and that a quick tap fires an ability. Point it at a
 different build with `GAME_URL` — the bundle in `dist/` has to pass exactly the same set.

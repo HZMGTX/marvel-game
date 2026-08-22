@@ -58,6 +58,12 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
       o.deadMinds  = AI_LIST.filter(a=>!BEINGS.some(b2=>aiAllowed(a, b2, null))).map(a=>a.name);
       o.thinSectors = SECTORS.filter(s2=>sectorBeings(s2.id).length < 3 || !sectorBoss(s2.id))
                              .map(s2=>s2.id);
+      /* every named boss has to exist and live in the sector it is named for */
+      o.badBosses = Object.keys(SECTOR_BOSS).filter(sec=>{
+        const b2 = BY_ID[SECTOR_BOSS[sec]];
+        return !b2 || b2.sector !== sec || sectorBoss(sec).id !== b2.id;
+      });
+      o.namedBossCount = Object.keys(SECTOR_BOSS).length;
     })();
 
     // every being builds a palette and a unit without throwing
@@ -519,6 +525,8 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   ok("no gear without an owner", r.orphanGear.length===0, r.orphanGear.join(", "));
   ok("no mind without a possible host", r.deadMinds.length===0, r.deadMinds.join(", "));
   ok("every sector has people and a boss", r.thinSectors.length===0, r.thinSectors.join(", "));
+  ok("all thirty bosses are the ones named", r.badBosses.length===0 && r.namedBossCount===30,
+     r.badBosses.join(", "));
   ok("every being builds", r.allBeings.bad===0, r.allBeings.badName);
   ok("body change locked in combat", r.lockedInCombat);
   ok("body change free out of combat", r.freeOutOfCombat);

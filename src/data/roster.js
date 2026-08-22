@@ -104,6 +104,7 @@ const ROSTER = [
 
 /* --- Manhattan / Avengers ------------------------------------------------ */
 "Captain America|6|BRAWLER|man|hero,avenger|I Can Do This All Day",
+"Ultron|9|SYNTH|man|villain,ai,synthetic,robot|There Are No Strings On Me",
 "Thunderbolt Ross|3|MARKSMAN|man|villain,military|Standing Order",
 "Betty Ross|2|TECH|man|civilian,tech|Gamma Reading",
 "Rick Jones|2|BRAWLER|man|hero,street|The Kid Who Was There",

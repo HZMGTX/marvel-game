@@ -42,7 +42,13 @@ function spawnWanderer(){
 function spawnBoss(){
   const b = sectorBoss(G.sector);
   const p = pickSpawn(G.player, 18, 34);
-  const e = makeEnt(b.id, p.x, p.z, "foe", {scale:1.16 + sectorIndex(G.sector)*0.012, boss:true});
+  /* A named boss is the sector's antagonist, not necessarily its strongest
+     resident — Kingpin runs Hell's Kitchen without out-tiering Man-Thing. Where
+     that gap exists, the body is scaled up to meet it. */
+  const top = sectorBeings(G.sector).reduce((m, x)=> Math.max(m, x.tier), 0);
+  const gap = Math.max(0, top - b.tier);
+  const e = makeEnt(b.id, p.x, p.z, "foe",
+                    {scale:(1.16 + sectorIndex(G.sector)*0.012) * (1 + gap*0.075), boss:true});
   e.maxHp = Math.round(e.maxHp*2.2); e.hp = e.maxHp;
   e.phase = 0; e.enrage = 1;
   G.ents.push(e); G.bossEnt = e;
