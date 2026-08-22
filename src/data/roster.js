@@ -110,8 +110,6 @@ const ROSTER = [
 "A-Bomb|6|TITAN|man|hero,gamma,beast|Armoured Gamma",
 "Amadeus Cho|5|TITAN|man|hero,gamma,tech|Eighth Smartest",
 "Justin Hammer|1|TECH|man|villain,tech|Hostile Takeover",
-"Riri Williams|5|TECH|man|hero,tech,armour|Homemade Armour",
-"Pepper Potts|4|TECH|man|hero,tech,armour|Rescue Protocol",
 "Happy Hogan|1|BRAWLER|man|civilian|Left Hook",
 "Howard Stark|1|TECH|man|civilian,tech|The Man Who Started It",
 "US Agent|4|BRAWLER|man|antihero,military|Star Shield",
@@ -123,11 +121,9 @@ const ROSTER = [
 "Deathlok|5|SYNTH|man|antihero,ai,cyborg|Combat Computer",
 "Sleepwalker|5|MYSTIC|man|hero,cosmic|Warp Gaze",
 "Justice|5|PSI|man|hero,young,mutant|Telekinetic Push",
-"Firestar|5|BLAST|man|hero,young,mutant|Microwave Flare",
 "Living Lightning|5|BLAST|man|hero|Discharge",
 "Rage|5|TITAN|man|hero,young|Raw Strength",
 "Iron Lad|5|TECH|man|hero,young,armour|Neuro-Kinetic Armour",
-"Stature|5|TITAN|man|hero,young|Growth Spurt",
 "Winter Soldier|5|MARKSMAN|man|antihero,avenger|",
 "Falcon|5|MARKSMAN|man|hero,avenger|Redwing Deploy",
 "U.S. Agent|5|BRAWLER|man|antihero|",
@@ -318,8 +314,6 @@ const ROSTER = [
 
 /* --- Wakanda ------------------------------------------------------------- */
 "Black Panther|6|ROGUE|wak|hero,wakandan,avenger|Kinetic Discharge",
-"Erik Killmonger|5|BRAWLER|wak|villain,wakandan|Usurper's Claim",
-"Ulysses Klaue|3|TECH|wak|villain,tech|Sonic Emitter",
 "Shuri|5|TECH|wak|hero,wakandan,tech|",
 "Okoye|5|BRAWLER|wak|hero,wakandan|Spear Of The Dora",
 "Nakia|4|ROGUE|wak|hero,wakandan|",
@@ -424,7 +418,6 @@ const ROSTER = [
 /* --- Sanctum Sanctorum --------------------------------------------------- */
 "Doctor Strange|8|MYSTIC|sanc|hero,mystic|Crimson Bands Of Cyttorak",
 "Cagliostro|5|MYSTIC|sanc|villain,magic|Alchemy Of Ages",
-"Jack Russell|4|BEAST|sanc|antihero,beast|The Wolf Takes Over",
 "Ulysses Bloodstone|5|MARKSMAN|sanc|hero,magic|The Gem Endures",
 "Union Jack|3|MARKSMAN|sanc|hero,military|Trench Raider",
 "Meggan|5|MYSTIC|sanc|hero,mutant,magic|Elemental Shift",

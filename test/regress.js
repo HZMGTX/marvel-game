@@ -44,6 +44,22 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
     o.live = !!G.player && G.ents.length>1 && G.world.boxes.length>0 && drawCalls>100;
     o.counts = {beings:BEINGS.length, gear:GEAR_LIST.length, ai:AI_LIST.length, sectors:SECTORS.length};
 
+    /* nobody is in the roster twice, and nothing owns gear that does not exist —
+       both of which happened the first time the roster grew */
+    (()=>{
+      const seenId = {}, seenName = {}, dupes = [];
+      for(const b2 of BEINGS){
+        if(seenId[b2.id]) dupes.push("id "+b2.id);
+        if(seenName[b2.name]) dupes.push("name "+b2.name);
+        seenId[b2.id] = seenName[b2.name] = 1;
+      }
+      o.rosterDupes = dupes;
+      o.orphanGear = GEAR_LIST.filter(g=>!BY_ID[g.ownerId]).map(g=>g.name);
+      o.deadMinds  = AI_LIST.filter(a=>!BEINGS.some(b2=>aiAllowed(a, b2, null))).map(a=>a.name);
+      o.thinSectors = SECTORS.filter(s2=>sectorBeings(s2.id).length < 3 || !sectorBoss(s2.id))
+                             .map(s2=>s2.id);
+    })();
+
     // every being builds a palette and a unit without throwing
     let bad = 0, badName = "";
     for(const bn of BEINGS){ try{ palette(bn); unitStats(bn,{level:1}); }catch(e){ bad++; badName=bn.name+": "+e.message; } }
@@ -498,7 +514,11 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   ok("and that city moves", t0.x !== t1.x && t0.tod !== t1.tod);
   ok("picking a body takes over from it", !t2.attract && t2.player);
   ok("world comes up live", r.live);
-  ok("content counts", r.counts.beings>=680 && r.counts.gear>=74 && r.counts.ai>=30 && r.counts.sectors===30, JSON.stringify(r.counts));
+  ok("content counts", r.counts.beings>=670 && r.counts.gear>=74 && r.counts.ai>=30 && r.counts.sectors===30, JSON.stringify(r.counts));
+  ok("nobody is in the roster twice", r.rosterDupes.length===0, r.rosterDupes.join(", "));
+  ok("no gear without an owner", r.orphanGear.length===0, r.orphanGear.join(", "));
+  ok("no mind without a possible host", r.deadMinds.length===0, r.deadMinds.join(", "));
+  ok("every sector has people and a boss", r.thinSectors.length===0, r.thinSectors.join(", "));
   ok("every being builds", r.allBeings.bad===0, r.allBeings.badName);
   ok("body change locked in combat", r.lockedInCombat);
   ok("body change free out of combat", r.freeOutOfCombat);

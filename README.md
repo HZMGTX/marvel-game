@@ -3,7 +3,7 @@
 A 3D action game that runs in a browser. You are a spark with no body of your own. You can
 hold on to a person, and while you do, everything they can do is something you can do.
 
-**680 beings. 74 pieces of gear. 30 artificial minds. 30 sectors.** No libraries, no art
+**673 beings. 74 pieces of gear. 30 artificial minds. 30 sectors.** No libraries, no art
 files, no audio files — every character, every building, every effect and every sound is
 generated from code at runtime.
 
@@ -231,7 +231,7 @@ back into `dist/multiverse-vessel.html`, still readable, still with no dependenc
 ## Checking it still works
 
 `test/regress.js` drives the real game in a real browser and asserts from page state, not
-from screenshots — that the world comes up, that every one of the 680 beings builds, that a body cannot
+from screenshots — that the world comes up, that every one of the 673 beings builds, that a body cannot
 be changed mid-fight, that guarding, parrying and rolling do what they claim, that gear
 stays bound to its owner, that missions start and abandon, that ranks buy, that bosses
 turn, that the city stays populated, and that the save round-trips.
