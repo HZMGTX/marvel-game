@@ -170,7 +170,10 @@ const SFX = {
            sfxNoise({f0:300,f1:5200,dur:0.7,gain:0.24,q:0.6}); },
   reward(){ [523,659,784].forEach((f,i)=>setTimeout(()=>sfxTone({type:"triangle",f0:f,dur:0.24,gain:0.18}), i*90)); },
   ui(){ sfxTone({type:"square", f0:520, f1:660, dur:0.05, gain:0.07}); },
-  tell(x,z){ sfxTone({type:"square", f0:300, f1:420, dur:0.18, gain:0.12*near(x,z,40)}); }
+  tell(x,z){ sfxTone({type:"square", f0:300, f1:420, dur:0.18, gain:0.12*near(x,z,40)}); },
+  ward(x,z){ sfxTone({type:"triangle", f0:180, f1:420, dur:0.42, gain:0.15*near(x,z,44)}); },
+  veil(x,z){ sfxNoise({f0:1800, f1:280, dur:0.30, gain:0.13*near(x,z,40), q:2.4}); },
+  call(x,z){ sfxTone({type:"sawtooth", f0:150, f1:90, dur:0.55, gain:0.20*near(x,z,50)}); }
 };
 
 /* keep the beds in step with the world */

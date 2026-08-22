@@ -23,9 +23,10 @@ function drawChar(e, camDist){
   const c2 = hurt ? WHITE3 : pal.c2;
   const c3 = hurt ? WHITE3 : pal.c3;
   const headCol = hurt ? WHITE3 : (pal.masked||pal.machine ? pal.c1 : pal.skin);
-  const M1 = {rough:CLOTH.rough, metal:CLOTH.metal, emis};
-  const M2 = {rough:TRIM.rough,  metal:TRIM.metal,  emis};
-  const MH = {rough:pal.masked?CLOTH.rough:SKINM.rough, metal:pal.masked?CLOTH.metal:0.02, emis};
+  const veil = (G.t < (e.veil||0)) ? 0.26 : 1;
+  const M1 = {rough:CLOTH.rough, metal:CLOTH.metal, emis, alpha:veil};
+  const M2 = {rough:TRIM.rough,  metal:TRIM.metal,  emis, alpha:veil};
+  const MH = {rough:pal.masked?CLOTH.rough:SKINM.rough, metal:pal.masked?CLOTH.metal:0.02, emis, alpha:veil};
 
   /* pose ------------------------------------------------------------- */
   const flying = e.fly;

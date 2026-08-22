@@ -53,6 +53,27 @@ function buildEffects(){
              0.14, 0.5, 0.14, TELL3, {kind:3, emis:1.0, alpha:0.35+0.55*k});
       }
     }
+    if(e.breakAt){                     /* the wind-up no guard answers */
+      const k = Math.min(1, 1 - (e.breakAt - now())/1000);
+      const R = 1.2 + k*3.0;
+      for(let i=0;i<14;i++){
+        const a = i/14*6.283 - now()*0.005;
+        draw(MESH_BOX, e.x+Math.sin(a)*R, e.y+0.14, e.z+Math.cos(a)*R, a,0,0,
+             0.18, 0.62, 0.18, ELITE3.breaker, {kind:3, emis:1.1, alpha:0.30+0.60*k});
+      }
+    }
+    if(e.elite){                       /* the mark of the role, always on */
+      const col = ELITE3[e.elite];
+      const veiled = now() < (e.veil||0);
+      for(let i=0;i<3;i++){
+        const a = now()*0.0026 + i*2.094;
+        const rr = (0.70 + Math.sin(now()*0.0034+i)*0.08)*e.size;
+        draw(MESH_SPH_LO, e.x+Math.sin(a)*rr, e.y+e.height*0.94, e.z+Math.cos(a)*rr,
+             0,0,0, 0.11,0.11,0.11, col, {kind:3, emis:1.1, alpha:veiled?0.45:0.9});
+      }
+      draw(MESH_TUBE, e.x, groundAt(e.x, e.z, e.rad)+0.05, e.z, 0,0,0,
+           1.7*e.size, 0.03, 1.7*e.size, col, {kind:3, emis:0.8, alpha:0.22});
+    }
     if(e.blocking){
       const gy = e.yaw;
       draw(MESH_BOX, e.x+Math.sin(gy)*0.55, e.y+1.05*e.size, e.z+Math.cos(gy)*0.55,

@@ -46,6 +46,7 @@ function update(dt){
     if(e.dead) continue;
     if(e.team==="foe"){
       enemyThink(e, dt);
+      eliteThink(e, dt);
       /* something is coming for you — that counts as being in a fight */
       if(p && !p.dead && e.engaged && distXZ(e,p) < 25) G.lastCombat = G.t;
     }

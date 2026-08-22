@@ -37,7 +37,7 @@ function spawnWanderer(){
                     : (pool.length*.85 + Math.random()*pool.length*.15)|0;
   const b = pool[Math.min(pool.length-1, i)];
   const p = pickSpawn(G.player, 16, 62);
-  G.ents.push(makeEnt(b.id, p.x, p.z, "foe", {scale: 1 + sectorIndex(G.sector)*0.010}));
+  G.ents.push(maybeElite(makeEnt(b.id, p.x, p.z, "foe", {scale: 1 + sectorIndex(G.sector)*0.010})));
 }
 function spawnBoss(){
   const b = sectorBoss(G.sector);
@@ -55,7 +55,9 @@ function onFoeDown(e){
   const b = e.b;
   if(!S.unlocked.includes(b.id)){ S.unlocked.push(b.id); feed("NEW HOST — "+b.name,"big"); }
   S.defeated[b.id] = true;
-  const gained = Math.round((b.tier*9 + 12 + (e.boss?60:0)) * (1 + vesselLevel("essence")*0.14));
+  const eliteMul = e.elite && ELITES[e.elite] ? ELITES[e.elite].ess : 1;
+  const gained = Math.round((b.tier*9 + 12 + (e.boss?60:0)) * eliteMul
+                            * (1 + vesselLevel("essence")*0.14));
   S.essence += gained;
   if(G.player) noteKill(G.player.id);
   S.kills[G.sector] = killsIn(G.sector) + 1;

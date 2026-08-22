@@ -46,6 +46,7 @@ function dealDamage(att, def, mul, o){
   if(hasFx(def,"fortify")) dmg *= .70;
   if(hasFx(def,"mark"))    dmg *= 1.25;
   if(att.ai && att.ai.fx==="simulate" && S.defeated[def.id]) dmg *= 1.10;
+  if(att.elite === "stalker" && now() < (att.veil||0)) dmg *= 1.70;   /* out of nowhere */
   if(def.ai && def.ai.fx==="adapt") dmg *= .82;
   let crit = .05 + (att.st.s-def.st.s)/900 + (o.crit||0);
   if(att.ai && att.ai.fx==="targeting") crit += .12;
@@ -120,6 +121,7 @@ function dealDamage(att, def, mul, o){
   if(o.mark)  setFx(def,"mark",4000);
   if(o.stun)  setFx(def,"stun",o.stun);
   if(o.drain) att.hp = Math.min(att.maxHp, att.hp + dmg*o.drain);
+  if(att.elite) eliteOnHit(att, def, dmg);
   /* the world stops for a breath when something really lands */
   if(att.team === "you" && (isCrit || dmg > def.maxHp*0.09))
     G.freeze = Math.max(G.freeze, isCrit ? 95 : 65);

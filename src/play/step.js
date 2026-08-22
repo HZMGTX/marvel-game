@@ -3,7 +3,7 @@
    Part of Multiverse Vessel. Loaded in order from index.html. */
 
 function stepEnt(e, dts){
-  let spd = e.act.spd*MPU * (1 + (e.st.s-30)/300);
+  let spd = e.act.spd*MPU * (1 + (e.st.s-30)/300) * (e.spdMul||1);
   if(e.blocking){ spd *= 0.42; e.nrg = Math.max(0, e.nrg - BLOCK_DRAIN*dts); if(e.nrg<=0) e.blocking = false; }
   if(hasFx(e,"haste")) spd *= 1.35;
   if(hasFx(e,"stun")) spd = 0;
@@ -24,7 +24,10 @@ function stepEnt(e, dts){
     e.vz = Math.cos(e.dashYaw)*e.dashSpeed;
     for(const t of G.ents){
       if(t.dead||t.team===e.team||e.dashHit.has(t)) continue;
-      if(distXZ(t,e) < e.rad+t.rad+0.7 && Math.abs(t.y-e.y)<2){ e.dashHit.add(t); dealDamage(e,t,e.dashMul,e.dashOpts); }
+      if(distXZ(t,e) < e.rad+t.rad+0.7 && Math.abs(t.y-e.y)<2){
+        e.dashHit.add(t);
+        if(e.dashMul > 0) dealDamage(e,t,e.dashMul,e.dashOpts);
+      }
     }
   } else {
     if(e.dashT && now()>=e.dashT){ e.dashT = 0; e.vx*=.35; e.vz*=.35; }

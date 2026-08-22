@@ -101,6 +101,84 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
                         G.timeOfDay=0.75; applyDayNight(); const d=G.world.sunCol.reduce((a,c)=>a+c,0);
                         G.timeOfDay=0.30; applyDayNight(); return d < n; })();
 
+    // elites: six roles, each doing the one thing it says it does
+    (()=>{
+      const clear = ()=>{ G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9; };
+      const melee = sectorBeings(G.sector).find(b2=>!ACT[b2.arch].ranged).id;
+      const foe = (role, dx)=>{ const e = makeEnt(melee, G.player.x+(dx||3), G.player.z, "foe", {});
+                                if(role) makeElite(e, role); G.ents.push(e); return e; };
+      const P = G.player;
+
+      o.eliteRoles = ELITE_IDS.length === 6;
+      o.eliteApplies = ELITE_IDS.every(k=>{
+        const base = makeEnt(melee, 0, 0, "foe", {});
+        const e = makeEnt(melee, 0, 0, "foe", {}); makeElite(e, k);
+        return e.elite === k && e.hp === e.maxHp
+            && e.maxHp === Math.round(base.maxHp*ELITES[k].hp) && e.spdMul === ELITES[k].spd;
+      });
+
+      clear(); const w = foe("warden", 3), near = foe(null, 5);
+      w.roleT = 0; eliteThink(w, 33);
+      o.eliteWarden = hasFx(near,"fortify") && hasFx(w,"fortify");
+
+      clear(); const br = foe("breaker", 3);
+      br.roleT = 0; eliteThink(br, 33);
+      const winds = br.breakAt - G.t > 800;
+      P.hp = P.maxHp; P.fx = {}; P.blocking = true; P.blockStart = G.t - 2000;
+      P.yaw = Math.atan2(br.x-P.x, br.z-P.z);
+      br.breakAt = G.t - 1; eliteThink(br, 33);
+      o.eliteBreaker = winds && (P.maxHp - P.hp) > P.maxHp*0.04;   /* the guard did not help */
+
+      clear(); const st = foe("stalker", 3);
+      st.roleT = 0; eliteThink(st, 33);
+      const veils = st.veil > G.t;
+      P.yaw = 0; P.x = 0; P.z = 0; st.x = 0; st.z = 6; eliteThink(st, 33);
+      const flanks = st.mz < -0.4;
+      /* average a few — a single hit rolls crit and +-8% spread */
+      P.blocking = false;
+      const swing = (veiled)=>{ let sum = 0;
+        for(let i=0;i<24;i++){ st.veil = veiled ? G.t + 3000 : 0;
+          P.hp = P.maxHp; P.fx = {}; dealDamage(st,P,1.0,{}); sum += P.maxHp - P.hp; }
+        return sum/24; };
+      const open = swing(false), back = swing(true);
+      st.veil = G.t + 3000; P.hp = P.maxHp; P.fx = {}; dealDamage(st,P,1.0,{});
+      o.eliteStalker = veils && flanks && back > open*1.4 && !(st.veil > G.t);
+
+      clear(); const mk = foe("marksman", 2);
+      mk.roleT = 0; eliteThink(mk, 33);
+      o.eliteMarksman = mk.dashT > G.t && mk.dashMul === 0;
+
+      clear(); const lc = foe("leech", 3);
+      lc.hp = Math.round(lc.maxHp*0.5); const lhp = lc.hp;
+      P.fx = {}; P.hp = P.maxHp; dealDamage(lc, P, 1.0, {});
+      o.eliteLeech = lc.hp > lhp;
+
+      clear(); const hr = foe("herald", 3);
+      const n0 = G.ents.filter(e=>e.team==="foe").length;
+      hr.hp = hr.maxHp*0.5; eliteThink(hr, 33);
+      const n1 = G.ents.filter(e=>e.team==="foe").length;
+      hr.hp = hr.maxHp*0.2; eliteThink(hr, 33);
+      o.eliteHerald = n1 - n0 === 2 && G.ents.filter(e=>e.team==="foe").length === n1;
+
+      clear();
+      const was = G.sector;
+      G.sector = SECTORS[0].id; const lo = eliteChance();
+      G.sector = SECTORS[SECTORS.length-1].id; const hi = eliteChance();
+      G.sector = was;
+      let seen = 0;
+      for(let i=0;i<400;i++) if(maybeElite(makeEnt(melee,0,0,"foe",{})).elite) seen++;
+      o.eliteRate = hi > lo && seen > 20 && seen < 160;
+
+      clear();
+      const rich = foe("herald", 3);
+      S.essence = 0; killEnt(rich);
+      const richEss = S.essence;
+      const plain = foe(null, 3);
+      S.essence = 0; killEnt(plain);
+      o.eliteWorthMore = richEss > S.essence;
+      clear(); P.hp = P.maxHp; P.fx = {}; P.blocking = false;
+    })();
+
     // flight: a dive builds speed, pulling out spends it forward, landing lands
     (()=>{
       const step = (n)=>{ for(let i=0;i<n;i++) update(33); };
@@ -180,6 +258,16 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   ok("city populated", r.city.cars>0 && r.city.civs>0 && r.city.props>0, JSON.stringify(r.city));
   ok("civilians replenish", r.civsReturn);
   ok("night darker than noon", r.dayNight);
+  ok("six elite roles", r.eliteRoles);
+  ok("every role reshapes its host", r.eliteApplies);
+  ok("warden hardens the room", r.eliteWarden);
+  ok("breaker warns, then no guard helps", r.eliteBreaker);
+  ok("stalker veils, flanks and backstabs", r.eliteStalker);
+  ok("marksman kites without hurting", r.eliteMarksman);
+  ok("leech heals off what it lands", r.eliteLeech);
+  ok("herald calls adds once", r.eliteHerald);
+  ok("elites get commoner deeper in", r.eliteRate);
+  ok("elites are worth more", r.eliteWorthMore);
   ok("flight climbs", r.flyClimbs);
   ok("flight carries momentum", r.flyCoasts);
   ok("flight banks into a turn", r.flyBanks);

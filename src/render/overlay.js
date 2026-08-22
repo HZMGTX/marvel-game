@@ -36,12 +36,18 @@ function drawOverlay(){
       UX.fillStyle = "#F7BC46";
       for(let i=0;i<e.phase;i++) UX.fillRect(sc.x + w/2 + 4 + i*7, sc.y, 5, 5);
     }
-    if(e.boss || near < 22){
+    if((e.boss || near < 22) && !(e.elite === "stalker" && now() < (e.veil||0))){
       UX.font = (e.boss?'700 15px':'700 11px')+' "Chivo Mono",ui-monospace,monospace';
       UX.textAlign="center"; UX.lineWidth=3.5; UX.strokeStyle="rgba(0,0,0,.9)";
       UX.strokeText(e.b.name, sc.x, sc.y-6);
       UX.fillStyle = e.boss ? "#F7BC46" : "#D6CEEA";
       UX.fillText(e.b.name, sc.x, sc.y-6);
+      const role = e.elite && ELITES[e.elite];
+      if(role){
+        UX.font = '700 9px "Chivo Mono",ui-monospace,monospace';
+        UX.lineWidth = 3; UX.strokeText(role.name, sc.x, sc.y-20);
+        UX.fillStyle = role.hex; UX.fillText(role.name, sc.x, sc.y-20);
+      }
     }
     UX.globalAlpha = 1;
   }

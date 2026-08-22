@@ -105,6 +105,24 @@ buildings that stand on pillars so you can walk in under them. The sun goes roun
 eight-minute cycle — dawn, noon, dusk, night with the windows lit — and it rains about
 a third of the time.
 
+## The ones who are not like the others
+
+Roughly one wanderer in seven carries a **role** — more the deeper you go, up to about two
+in five. A role keeps the person's own name, stats and abilities and adds one behaviour on
+top, announced above their head before they reach you, with a coloured ring under their feet.
+
+| | What it does | What beats it |
+|---|---|---|
+| **WARDEN** | Hardens everything standing near it, every seven seconds | Break the warden first |
+| **STALKER** | Goes half-invisible and walks round to your back; strikes at 1.7× | Turn around |
+| **BREAKER** | Plants its feet, warns for a full second, then lands something no guard stops | Roll it |
+| **MARKSMAN** | Will not let you close — dashes back the moment you get inside nine metres | Cover, or get there fast |
+| **LEECH** | Half of every hit it lands goes back into its own health | Do not trade with it |
+| **HERALD** | Calls two more in the moment it drops below 60% | Finish it before then |
+
+They cost you more and they are worth more — up to 2.2× the essence. The first time you
+meet each role, the feed tells you what it is and what to do about it, once.
+
 ## Sound
 
 Sixteen sounds, all synthesised at the moment they play — impacts, a bright chime for a
@@ -125,7 +143,7 @@ src/gl/        matrix maths, the WebGL context, the shaders, the draw queue
 src/world/     the city plan, traffic, crowds, weather and the day
 src/body/      palette, skeleton, pose, and gear drawn onto a body
 src/fight/     damage, guards, parries, effects, and what the four slots do
-src/play/      entities, enemy minds, the step, the frame, missions, story
+src/play/      entities, enemy minds, elite roles, the step, the frame, missions, story
 src/render/    the camera, the passes, the effects, the flat overlay
 src/audio/     every sound, synthesised
 src/ui/        controls, HUD, screens, and what their buttons do
@@ -164,7 +182,7 @@ npm i playwright
 node test/regress.js
 ```
 
-It exits non-zero on any failure. Twenty-nine checks, currently all passing. Point it at a
+It exits non-zero on any failure. Thirty-nine checks, currently all passing. Point it at a
 different build with `GAME_URL` — the bundle in `dist/` has to pass exactly the same set.
 
 ## Unofficial fan project
