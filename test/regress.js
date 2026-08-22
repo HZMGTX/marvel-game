@@ -627,6 +627,46 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   ok("a press is an edge as well as a level", r.tapLatch);
   ok("save round-trips", r.save);
 
+  /* --- switching quality mid-game must not drop the world ------------------ */
+  const qsw = await p.evaluate(()=>{
+    const seen = [];
+    for(const qq of ["high","low","medium","high","low"]){
+      quality = qq; resize();
+      for(let i=0;i<6;i++){ update(33); renderScene(); }
+      seen.push({q:qq, calls:drawCalls, shadow:!!SHADOW, live:!!G.player && G.ents.length>0});
+    }
+    quality = "low"; resize();
+    return seen;
+  });
+  ok("quality can be switched mid-game",
+     qsw.every(x=>x.live && x.calls > 40) && qsw.some(x=>x.shadow) && qsw.some(x=>!x.shadow),
+     qsw.map(x=>x.q+":"+x.calls).join(" "));
+
+  /* --- and a full save has to survive a real reload ------------------------ */
+  const before = await p.evaluate(()=>{
+    BEINGS.slice(0,60).forEach(b2=>{ if(!S.unlocked.includes(b2.id)) S.unlocked.push(b2.id);
+                                     S.defeated[b2.id] = true; });
+    GEAR_LIST.slice(0,12).forEach(g=>{ if(!S.gearOwned.includes(g.id)) S.gearOwned.push(g.id); });
+    GEAR_LIST.slice(0,4).forEach(g=>{ if(!S.attuned.includes(g.id)) S.attuned.push(g.id);
+                                      S.gearLv[g.id] = 2; });
+    AI_LIST.slice(0,8).forEach(a=>{ if(!S.aiOwned.includes(a.id)) S.aiOwned.push(a.id); });
+    S.installedAi = AI_LIST[3].id;
+    S.essence = 5000; S.levels[S.host] = 7; S.xp[S.host] = 40;
+    S.abil[S.host] = {light:2, power:1}; S.vessel = {surge:2, regen:1, essence:3, iframe:1};
+    S.mastery[S.host] = 120; S.kills = {hk:9, qns:4}; S.cleared = {hk:true};
+    S.missionsDone = 7; S.missionRound = 2; S.story = {hk:true};
+    S.worn = 11; S.spent = 4; S.letGo = 1; S.heldOn = 2;
+    S.loadout[S.host] = GEAR_LIST[0].id;
+    save();
+    return JSON.parse(localStorage.getItem(SAVE_KEY));
+  });
+  await p.reload();
+  await p.waitForTimeout(1200);
+  const after = await p.evaluate(()=>JSON.parse(JSON.stringify(S)));
+  const drift = Object.keys(before).filter(k=>JSON.stringify(before[k]) !== JSON.stringify(after[k]));
+  ok("a whole save survives a reload", drift.length===0 && Object.keys(before).length >= 25,
+     drift.length ? "drifted: "+drift.join(", ") : Object.keys(before).length+" keys");
+
   /* --- and the same game on a phone --------------------------------------- */
   const mctx = await b.newContext({viewport:{width:390,height:844}, isMobile:true,
                                    hasTouch:true, deviceScaleFactor:2});
