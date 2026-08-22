@@ -2519,7 +2519,9 @@ function palette(b){
     hair:srgb(HAIR[(h>>>15)%HAIR.length]),
     cape: /monarch|asgardian|mystic|entity|celestial|eternal|demon/.test(tags)
           || /MONARCH|MYSTIC|ENTITY/.test(b.arch) ? p(7)>0.28 : p(7)>0.86,
-    capeCol: srgb(shiftHex(c1, p(19)>.5 ? 172 : 8, p(23)>.5 ? -14 : 10)),
+    capeCol: srgb(/thor|jane foster|magneto|vision|doctor strange|strange supreme|sheriff/i.test(b.name)
+                  ? "#8E1F1B"
+                  : shiftHex(c1, p(19)>.72 ? 26 : 0, p(23)>.5 ? -22 : -12)),
     masked, machine, armoured,
     hooded: /mystic|demon/.test(tags) && p(21)>0.6,
     horns: /demon|deviant/.test(tags) || p(25)>0.975,
@@ -2557,7 +2559,7 @@ function joint(x,y,z, r, alb, mat){ draw(MESH_SPH, x,y,z, 0,0,0, r*2,r*2,r*2, al
 
 function drawChar(e, camDist){
   const s = e.size * 1.0;
-  const pal = e.pal;
+  let pal = e.pal;
   const t = G.t;
   const hurt = (t - e.hitT) < 140;
   const far = camDist > 30;
@@ -2565,7 +2567,9 @@ function drawChar(e, camDist){
   e.animT += speed * 0.012 + 0.0006;
   const ph = e.animT * 2.2;
 
-  const CLOTH = {rough:pal.rough, metal:pal.metal};
+  const worn = (e.gear && e.pot > 0) ? e.gear : null;
+  const plated = worn && (worn.kind === "armor");
+  const CLOTH = plated ? {rough:0.24, metal:0.88} : {rough:pal.rough, metal:pal.metal};
   const TRIM  = {rough:pal.armoured?0.24:0.55, metal:pal.armoured?0.9:0.25};
   const SKINM = {rough:0.66, metal:0.02};
   const surge = hasFx(e,"surge");
@@ -2604,6 +2608,7 @@ function drawChar(e, camDist){
   const H = {                                     /* joint heights, size 1 */
     ankle:0.09, knee:0.50, hip:0.92, waist:1.05, chest:1.40, neck:1.46, head:1.655
   };
+  if(plated) pal = Object.assign({}, pal, {bulk: pal.bulk*1.12});
   const hipX = 0.085*s*pal.bulk, shX = 0.19*s*pal.bulk;
   const yb = bob*s;
 
@@ -2650,6 +2655,7 @@ function drawChar(e, camDist){
   }
 
   /* arms */
+  let rWrist = null, rElbow = null;
   for(const side of [-1, 1]){
     const ang = side<0 ? armLA : armRA, bend = side<0 ? elbL : elbR;
     const sx = side*shX;
@@ -2665,7 +2671,10 @@ function drawChar(e, camDist){
     if(!far) joint(elP[0],elP[1],elP[2], 0.050*s*pal.bulk, c1, M1);
     bone(elP[0],elP[1],elP[2], wrP[0],wrP[1],wrP[2], 0.050*s*pal.bulk, c2, M2);
     if(!far) joint(wrP[0],wrP[1],wrP[2], 0.055*s*pal.bulk, c2, M2);
+    if(side > 0){ rWrist = wrP.slice(); rElbow = elP.slice(); }
   }
+  /* what they are carrying, and only if it answers to them */
+  if(e.gear && e.pot > 0 && !far) drawGear(e, s, rWrist, rElbow, chest, headP, bodyPitch, yb, emis);
 
   /* neck and head */
   bone(chest[0],chest[1],chest[2], neck[0],neck[1],neck[2], 0.048*s, headCol, MH, MESH_TUBE);
@@ -2694,15 +2703,15 @@ function drawChar(e, camDist){
 
   /* cape */
   if(pal.cape && !far){
-    const flap = 0.16 + (e.moving?0.30:0) + (flying?0.55:0) + Math.sin(t*0.004)*0.07;
+    const flap = 0.16 + (e.moving?0.28:0) + (flying?0.50:0) + Math.sin(t*0.004)*0.06;
     for(let i=0;i<3;i++){
-      const w = 0.30 - i*0.02, yTop = H.chest - i*0.30, yBot = yTop - 0.32;
-      const zOff = -0.13 - i*0.10*flap*2.4;
+      const w = 0.20 - i*0.035;                  /* narrower, and tapering to a point */
+      const yTop = H.chest - i*0.28;
+      const zOff = -0.145 - i*0.09*flap*2.2;
       const a = L2W(e, 0, (yTop+yb)*s, zOff*s, bodyPitch, [0,0,0]);
-      const bq = L2W(e, 0, (yBot+yb)*s, (zOff-0.14*flap*2.6)*s, bodyPitch, [0,0,0]);
-      draw(MESH_BOX, (a[0]+bq[0])/2, (a[1]+bq[1])/2, (a[2]+bq[2])/2,
-           e.yaw, bodyPitch + 0.30 + i*0.16*flap, 0,
-           w*2*s*pal.bulk, 0.36*s, 0.022*s, pal.capeCol, {rough:0.88, metal:0.02, emis});
+      draw(MESH_BOX, a[0], a[1] - 0.15*s, a[2],
+           e.yaw, bodyPitch + 0.26 + i*0.15*flap, 0,
+           w*2*s*pal.bulk, 0.34*s, 0.020*s, pal.capeCol, {rough:0.88, metal:0.02, emis});
     }
   }
   /* wings, for the ones that have them */
@@ -2716,6 +2725,114 @@ function drawChar(e, camDist){
   }
 }
 const WHITE3 = [1,1,1], EYE3 = [0.04,0.04,0.06];
+
+/* --------------------------------------------------------------- the gear */
+/* A suit you are entitled to should be visible on you. What gets drawn comes
+   from the piece's kind and its name, so Mjolnir is a hammer and the Cloak of
+   Levitation is a cloak. */
+const GEAR_SHAPE = [
+  [/mjolnir|stormbreaker|jarnbjorn|universal weapon|crowbar/i, "hammer"],
+  [/sword|blade|glaive|soulsword|godslayer|ebony|twilight|dragonfang/i, "sword"],
+  [/spear|gungnir|trident|staff|wand|sceptre|crowbar/i, "staff"],
+  [/\bgun\b|rifle|arsenal|element gun|blaster|repulsor/i, "gun"],
+  [/shield/i, "shield"],
+  [/board/i, "board"],
+  [/cloak|cape/i, "cloak"],
+  [/gauntlet|bands|rings|claws|bite|coils|actuator/i, "hands"],
+  [/helmet|visor|glasses|cerebro|interface/i, "head"],
+  [/glider|wings|wingsuit|jet/i, "wings"],
+  [/symbiote/i, "sheen"]
+];
+function gearShape(g){
+  for(const [re, kind] of GEAR_SHAPE) if(re.test(g.name)) return kind;
+  if(g.kind === "armor") return "armor";
+  if(g.kind === "relic") return "orb";
+  if(g.kind === "substance") return "aura";
+  return "hands";
+}
+function drawGear(e, s, wrist, elbow, chest, head, pitch, yb, emis){
+  const g = e.gear, pal = e.pal;
+  const shape = gearShape(g);
+  const echo = e.pot < 1;                      /* a borrowed thing is never the real thing */
+  const MET = {rough:0.16, metal:0.95, emis: emis + (echo?0.05:0.16)};
+  const GLOW = {kind:3, emis:1.0, alpha: echo?0.45:0.85};
+  const col = echo ? pal.c2 : GOLD3;
+  if(!wrist) wrist = [e.x, e.y+1.1*s, e.z];
+  const fwdx = Math.sin(e.yaw), fwdz = Math.cos(e.yaw);
+
+  if(shape === "hammer"){
+    const hx = wrist[0], hy = wrist[1], hz = wrist[2];
+    bone(hx, hy, hz, hx + fwdx*0.1, hy - 0.42*s, hz + fwdz*0.1, 0.035*s, pal.dark, {rough:0.8}, MESH_TUBE);
+    draw(MESH_BOX, hx, hy + 0.16*s, hz, e.yaw, 0, 0, 0.30*s, 0.26*s, 0.44*s, col, MET);
+  }
+  else if(shape === "sword"){
+    bone(wrist[0], wrist[1], wrist[2],
+         wrist[0] + fwdx*0.12, wrist[1] + 0.92*s, wrist[2] + fwdz*0.12,
+         0.030*s, col, MET, MESH_TAPER2);
+    draw(MESH_BOX, wrist[0], wrist[1] + 0.10*s, wrist[2], e.yaw,0,0, 0.28*s, 0.05*s, 0.06*s, pal.dark, MET);
+  }
+  else if(shape === "gun"){
+    draw(MESH_BOX, wrist[0] + fwdx*0.22*s, wrist[1], wrist[2] + fwdz*0.22*s, e.yaw,0,0,
+         0.10*s, 0.14*s, 0.52*s, pal.dark, {rough:0.3, metal:0.8});
+    draw(MESH_SPH_LO, wrist[0] + fwdx*0.50*s, wrist[1], wrist[2] + fwdz*0.50*s, 0,0,0,
+         0.10*s,0.10*s,0.10*s, col, GLOW);
+  }
+  else if(shape === "shield"){
+    draw(MESH_TUBE, wrist[0] + fwdx*0.10*s, wrist[1] + 0.10*s, wrist[2] + fwdz*0.10*s,
+         e.yaw, Math.PI/2, 0, 0.66*s, 0.07*s, 0.66*s, col, MET);
+  }
+  else if(shape === "staff"){
+    bone(wrist[0], wrist[1] - 0.55*s, wrist[2], wrist[0], wrist[1] + 1.05*s, wrist[2],
+         0.028*s, pal.dark, {rough:0.6, metal:0.5}, MESH_TUBE);
+    draw(MESH_SPH_LO, wrist[0], wrist[1] + 1.12*s, wrist[2], 0,0,0, 0.14*s,0.18*s,0.14*s, col, GLOW);
+  }
+  else if(shape === "board"){
+    draw(MESH_TUBE, e.x, e.y + 0.06, e.z, e.yaw, 0, 0, 0.9*s, 0.10*s, 2.1*s, col,
+         {rough:0.05, metal:1.0, emis: echo?0.1:0.3});
+  }
+  else if(shape === "cloak"){
+    const flap = 0.20 + (e.moving?0.28:0) + (e.fly?0.5:0);
+    for(let i=0;i<3;i++){
+      const yTop = 1.40 - i*0.30, w = 0.34 - i*0.02;
+      const a = L2W(e, 0, (yTop+yb)*s, (-0.14 - i*0.10)*s, pitch, [0,0,0]);
+      draw(MESH_BOX, a[0], a[1] - 0.16*s, a[2], e.yaw, pitch + 0.32 + i*0.16*flap, 0,
+           w*2*s, 0.38*s, 0.024*s, col, {rough:0.72, metal:0.1, emis:echo?0:0.06});
+    }
+  }
+  else if(shape === "hands"){
+    draw(MESH_SPH_LO, wrist[0], wrist[1], wrist[2], 0,0,0, 0.16*s,0.16*s,0.16*s, col, MET);
+    draw(MESH_SPH_LO, wrist[0], wrist[1], wrist[2], 0,0,0, 0.26*s,0.26*s,0.26*s, col, GLOW);
+  }
+  else if(shape === "head"){
+    draw(MESH_SPH, head[0], head[1] + 0.06*s, head[2], e.yaw, pitch, 0,
+         0.24*s, 0.20*s, 0.24*s, col, MET);
+  }
+  else if(shape === "wings"){
+    for(const sd of [-1,1]){
+      const a = L2W(e, sd*0.16*s, (1.40+yb)*s, -0.10*s, pitch, [0,0,0]);
+      const spread = e.fly ? 1.0 : 0.4;
+      const bq = L2W(e, sd*(0.34+0.8*spread)*s, (1.40+yb+0.26*spread)*s, (-0.32-0.3*spread)*s, pitch, [0,0,0]);
+      bone(a[0],a[1],a[2], bq[0],bq[1],bq[2], 0.085*s, col, MET, MESH_TAPER2);
+    }
+  }
+  else if(shape === "armor"){
+    draw(MESH_SPH_LO, chest[0], chest[1] + 0.02*s, chest[2] + Math.sin(e.yaw)*0, 0,0,0,
+         0.17*s, 0.17*s, 0.17*s, col, GLOW);       /* the light in the chest */
+    for(const sd of [-1,1]){
+      const sh = L2W(e, sd*0.21*s, (1.40+yb)*s, 0, pitch, [0,0,0]);
+      draw(MESH_SPH_LO, sh[0], sh[1]+0.04*s, sh[2], 0,0,0, 0.24*s,0.16*s,0.24*s, col, MET);
+    }
+  }
+  else if(shape === "orb"){
+    const a = G.t*0.003;
+    draw(MESH_SPH_LO, e.x + Math.sin(a)*0.55*s, e.y + 1.55*s, e.z + Math.cos(a)*0.55*s,
+         0,0,0, 0.15*s,0.15*s,0.15*s, col, GLOW);
+  }
+  else if(shape === "sheen" || shape === "aura"){
+    draw(MESH_SPH, e.x, e.y + 0.92*s, e.z, 0,0,0, 1.05*s, 1.95*s, 1.05*s, col,
+         {kind:3, alpha: echo?0.08:0.16, emis:0.5});
+  }
+}
 
 /* ------------------------------------------------------- combat, in metres */
 /* the ability table is written in abstract units; these turn it into metres */
