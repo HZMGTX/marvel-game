@@ -438,6 +438,46 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
       G.usedBackup = false; G.struck = false;
     })();
 
+    /* each of the thirty bosses has one beat that is its own. Every behaviour
+       has to fire, and do the thing its name claims. */
+    (()=>{
+      const P = G.player;
+      const bad = [], seen = {};
+      const was = G.sector;
+      o.bossKitGaps = SECTORS.filter(s2=>!BOSS_KIT[s2.id]).map(s2=>s2.id);
+      for(const sec of SECTORS.map(s2=>s2.id)){
+        const kit = BOSS_KIT[sec];
+        if(!kit || seen[kit]) continue;
+        seen[kit] = sec;
+        G.sector = sec;
+        G.ents = G.ents.filter(e2=>e2.team==="you"); G.lastCombat = -1e9;
+        const e = makeEnt(sectorBoss(sec).id, P.x + 6, P.z, "foe", {boss:true});
+        e.maxHp = 1e7; e.hp = e.maxHp; e.phase = 0; e.enrage = 1; e.kitT = 0;
+        G.ents.push(e);
+        P.hp = P.maxHp; P.fx = {}; P.dead = false; P.grounded = true;
+        P.vx = P.vz = 0; P.x = e.x - 6; P.z = e.z;
+        const hp0 = P.hp, ents0 = G.ents.length, ex0 = e.x;
+        try{
+          bossKitTick(e, 33);
+          const telegraphed = !!e.kitAt;
+          if(telegraphed){ e.kitAt = now() - 1; bossKitTick(e, 33); }
+          const did =
+            kit === "quake"   ? (telegraphed && P.hp < hp0) :
+            kit === "sweep"   ? (telegraphed && P.hp < hp0) :
+            kit === "summon"  ? (G.ents.length - ents0 === 2) :
+            kit === "bulwark" ? (hasFx(e,"shield") && hasFx(e,"fortify")) :
+            kit === "vanish"  ? (Math.abs(e.x - ex0) > 1) :
+            kit === "hunger"  ? (Math.abs(P.vx) > 0.5) : false;
+          if(!did) bad.push(sec+"/"+kit+" did nothing");
+        }catch(err){ bad.push(sec+"/"+kit+": "+err.message); }
+      }
+      G.sector = was;
+      G.ents = G.ents.filter(e2=>e2.team==="you"); G.lastCombat = -1e9;
+      P.hp = P.maxHp; P.fx = {}; P.vx = P.vz = 0;
+      o.bossKits = bad;
+      o.bossKitCount = new Set(Object.values(BOSS_KIT)).size;
+    })();
+
     // elites: six roles, each doing the one thing it says it does
     (()=>{
       const clear = ()=>{ G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9; };
@@ -705,6 +745,9 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   ok("adaptive learning stacks with the fight", r.mindAdapt);
   ok("backup catches you once per sector", r.mindBackup);
   ok("the mind chip reads and flashes", r.mindChip);
+  ok("every sector's boss has a beat of its own",
+     r.bossKitGaps.length===0 && r.bossKitCount===6, r.bossKitGaps.join(", "));
+  ok("and all six of those beats land", r.bossKits.length===0, r.bossKits.join(" | "));
   ok("six elite roles", r.eliteRoles);
   ok("every role reshapes its host", r.eliteApplies);
   ok("warden hardens the room", r.eliteWarden);

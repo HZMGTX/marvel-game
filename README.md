@@ -115,6 +115,15 @@ a third of the time.
 
 ## Who is waiting at the end of each one
 
+Each of them also has one beat that is its own, announced and answerable, so that Doom is not
+Dormammu with a different palette. Kingpin, Juggernaut, Killmonger, Surtur and Fin Fang Foom
+**put it through the floor** — a wave you have to not be standing on. Odin, Galactus, Arishem,
+the Supreme Intelligence and the Living Tribunal **line something up** and sweep it across the
+arena. Ultron, Onslaught, Annihilus and the Super-Skrull are **not there alone**. Doom, Black
+Bolt, Mephisto and God Emperor Doom **close** behind a shield you have to break. Dormammu,
+Belasco, Kang, the Collector and He Who Remains **step out of the room** and come back behind
+you. Green Goblin, Dark Phoenix, Hela, Thanos, Knull and the Grandmaster **pull**.
+
 Each sector has a named antagonist rather than whoever happens to have the highest number:
 Kingpin runs Hell's Kitchen, the Green Goblin is over Queens, Ultron is the one waiting in
 Manhattan, Killmonger in Wakanda, Thanos on Titan, He Who Remains in the TVA, Knull in the
@@ -257,7 +266,7 @@ what Actions does on a private repository when it cannot start a runner. Once Ac
 can run on the repo, put the `push` and `pull_request` triggers back and it works as
 written.
 
-It exits non-zero on any failure. Eighty checks, currently all passing — the last four
+It exits non-zero on any failure. Eighty-two checks, currently all passing — the last four
 of them in a real 390×844 touch context, checking that the phone build comes up, that nothing
 on its HUD collides or runs off the edge, and that a quick tap fires an ability. Point it at a
 different build with `GAME_URL` — the bundle in `dist/` has to pass exactly the same set.
