@@ -1,11 +1,15 @@
-# The regression harness drives the real game in a real browser. It only ever
-# ran when somebody remembered to run it; now it runs on every push.
+# The regression harness drives the real game in a real browser.
+#
+# This is deliberately manual — Run workflow, from the Actions tab. On push and
+# pull_request it fired and failed in two seconds with no logs at all, which is
+# what GitHub Actions does on a private repository when it cannot start a runner
+# (no included minutes left, a spending limit, or Actions restricted for the
+# repo). A check that is permanently red without ever running the tests is worse
+# than no check, so it waits to be asked. Turn the triggers back on once Actions
+# can run here — nothing else about it needs to change.
 name: checks
 
 on:
-  push:
-    branches: ['**']
-  pull_request:
   workflow_dispatch:
 
 jobs:

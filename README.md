@@ -250,9 +250,12 @@ npx playwright install chromium
 node test/regress.js
 ```
 
-It also runs itself. `.github/workflows/checks.yml` syntax-checks all 46 source
-files, folds the bundle, and drives both builds through the whole harness on
-every push — so a change that breaks the game cannot sit unnoticed in a branch.
+`.github/workflows/checks.yml` does the same thing on a runner — syntax-check all
+46 source files, fold the bundle, drive both builds through the whole harness. It is
+set to **Run workflow** only: on push it failed in two seconds with no logs, which is
+what Actions does on a private repository when it cannot start a runner. Once Actions
+can run on the repo, put the `push` and `pull_request` triggers back and it works as
+written.
 
 It exits non-zero on any failure. Seventy-seven checks, currently all passing — the last four
 of them in a real 390×844 touch context, checking that the phone build comes up, that nothing
