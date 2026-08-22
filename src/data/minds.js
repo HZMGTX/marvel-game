@@ -36,18 +36,18 @@ const AIS = [
 ];
 
 const AI_FX = {
-  targeting:{label:"Targeting Solution", desc:"+12% critical chance, and criticals hit harder."},
-  assist:   {label:"Combat Assist",      desc:"Once per battle, cancels a hit that would drop you below a quarter health."},
-  strike:   {label:"Orbital Strike",     desc:"Your first attack each battle deals 45% extra damage."},
-  encourage:{label:"Encouragement",      desc:"+18 energy at the start of every turn you are below half health."},
-  plating:  {label:"Drop Plating",       desc:"Start each battle with a shield already up."},
-  adapt:    {label:"Adaptive Learning",  desc:"Every turn, you take 4% less damage than the turn before, stacking."},
-  phase:    {label:"Density Control",    desc:"25% chance to phase through an incoming attack entirely."},
-  backup:   {label:"Backup Consciousness",desc:"Once per battle, revives you at 30% health when the host falls."},
-  foresee:  {label:"Precognition",       desc:"+15% evasion, and enemy afflictions land on you 30% less often."},
-  simulate: {label:"Combat Simulation",  desc:"+10% damage against any enemy you have already fought once."},
-  repair:   {label:"Field Repair",       desc:"Restores 6% health at the end of each of your turns."},
-  allocate: {label:"Force Allocation",   desc:"+30% energy regeneration and abilities cost 15% less."}
+  targeting:{label:"Targeting Solution", desc:"+12% critical chance, and your criticals hit harder."},
+  assist:   {label:"Combat Assist",      desc:"Once per fight, cancels a hit that would drop you below a quarter health."},
+  strike:   {label:"Orbital Strike",     desc:"The first blow you land in each fight hits 45% harder."},
+  encourage:{label:"Encouragement",      desc:"Energy comes back much faster while you are below half health."},
+  plating:  {label:"Drop Plating",       desc:"A shield goes up by itself the moment a fight starts."},
+  adapt:    {label:"Adaptive Learning",  desc:"The longer a fight runs the less it hurts — 2% a second, to a quarter off."},
+  phase:    {label:"Density Control",    desc:"A quarter of everything aimed at you passes straight through."},
+  backup:   {label:"Backup Consciousness",desc:"Once per sector, puts you back on your feet at 30% when the host falls."},
+  foresee:  {label:"Precognition",       desc:"You slip one hit in seven, and afflictions land 30% less often."},
+  simulate: {label:"Combat Simulation",  desc:"+10% damage against anyone you have already beaten once."},
+  repair:   {label:"Field Repair",       desc:"Steadily puts health back while you are still standing."},
+  allocate: {label:"Force Allocation",   desc:"+30% energy regeneration."}
 };
 
 /* ------------------------------------------------------------- generation */

@@ -117,6 +117,74 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
       return Object.values(o.dayLighting).every(Boolean);
     })();
 
+    // artificial minds: all twelve do something you can see
+    (()=>{
+      const clear = ()=>{ G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9; };
+      const melee = sectorBeings(G.sector).find(b2=>!ACT[b2.arch].ranged).id;
+      const foe = ()=>{ const e = makeEnt(melee, G.player.x+3, G.player.z, "foe", {});
+                        e.maxHp = 1e7; e.hp = e.maxHp; G.ents.push(e); return e; };
+      const wear = fx => (G.player.ai = AI_LIST.find(x=>x.fx===fx));
+      const P = G.player;
+
+      o.mindsAllWired = Object.keys(AI_FX).every(k => AI_LIST.some(a=>a.fx===k));
+      o.mindCount = Object.keys(AI_FX).length === 12;
+
+      /* the first blow of a fight, and only the first */
+      clear(); wear("strike"); const t = foe();
+      const swing = fresh => { if(fresh) G.struck = false; t.hp = t.maxHp;
+                               dealDamage(P,t,1.0,{}); return t.maxHp - t.hp; };
+      let first = 0; for(let i=0;i<40;i++) first += swing(true);
+      G.struck = true;
+      let later = 0; for(let i=0;i<40;i++) later += swing(false);
+      o.mindStrike = first > later*1.25 && first < later*1.65;
+
+      /* a shield on the bell */
+      clear(); wear("plating"); P.fx = {}; mindsOnFightStart(P);
+      o.mindPlating = hasFx(P,"shield");
+
+      /* a quarter of it passes through */
+      clear(); wear("phase"); const t2 = foe();
+      let through = 0;
+      for(let i=0;i<400;i++){ P.hp = P.maxHp; P.fx = {}; if(dealDamage(t2,P,1.0,{}) === 0) through++; }
+      o.mindPhase = through > 60 && through < 160;
+
+      /* one hit in seven slips, and the riders land less often */
+      clear(); wear("foresee");
+      let slipped = 0;
+      for(let i=0;i<600;i++){ P.hp = P.maxHp; P.fx = {}; if(dealDamage(t2,P,1.0,{}) === 0) slipped++; }
+      let burned = 0;
+      for(let i=0;i<300;i++){ P.hp = P.maxHp; P.fx = {}; dealDamage(t2,P,1.0,{burn:true}); if(hasFx(P,"burn")) burned++; }
+      o.mindForesee = slipped > 40 && slipped < 190 && burned > 150 && burned < 270;
+
+      /* the longer the fight runs the less it hurts */
+      clear(); wear("adapt");
+      G.fightStart = G.t;         const early = mindMitigation(P);
+      G.fightStart = G.t - 20000; const late  = mindMitigation(P);
+      o.mindAdapt = early === 1 && late < 0.75 && late > 0.7;
+
+      /* and one of them catches you, once per sector */
+      clear(); wear("backup"); G.usedBackup = false; G.ended = false;
+      P.hp = 1; P.dead = false; killEnt(P);
+      const caught = !P.dead && P.hp > 1 && !G.ended;
+      P.hp = 1; P.dead = false; G.ended = false; killEnt(P);
+      o.mindBackup = caught && P.dead;
+
+      /* the chip says which mind you are carrying and what it just did */
+      clear(); P.dead = false; P.hp = P.maxHp; P.fx = {}; G.ended = false;
+      wear("targeting"); G.mindFire = null;
+      const idle = mindChip(P);
+      mindFired("ORBITAL STRIKE");
+      const firing = mindChip(P);
+      updateHud();
+      const shown = el("tag-mind").style.display !== "none" && el("tag-mind").dataset.on === "1";
+      P.ai = null; G.mindFire = null; updateHud();
+      o.mindChip = idle === "TARGETING SOLUTION" && firing === "ORBITAL STRIKE"
+                   && shown && el("tag-mind").style.display === "none";
+
+      clear(); P.hp = P.maxHp; P.fx = {}; P.dead = false; G.ended = false;
+      G.usedBackup = false; G.struck = false;
+    })();
+
     // elites: six roles, each doing the one thing it says it does
     (()=>{
       const clear = ()=>{ G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9; };
@@ -274,6 +342,14 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   ok("city populated", r.city.cars>0 && r.city.civs>0 && r.city.props>0, JSON.stringify(r.city));
   ok("civilians replenish", r.civsReturn);
   ok("a day that is actually a day", r.dayNight, JSON.stringify(r.dayLighting));
+  ok("twelve minds, all of them wired", r.mindsAllWired && r.mindCount);
+  ok("orbital strike hits the first blow only", r.mindStrike);
+  ok("plating shields you when a fight starts", r.mindPlating);
+  ok("density control phases a quarter of it", r.mindPhase);
+  ok("precognition slips hits and resists riders", r.mindForesee);
+  ok("adaptive learning stacks with the fight", r.mindAdapt);
+  ok("backup catches you once per sector", r.mindBackup);
+  ok("the mind chip reads and flashes", r.mindChip);
   ok("six elite roles", r.eliteRoles);
   ok("every role reshapes its host", r.eliteApplies);
   ok("warden hardens the room", r.eliteWarden);

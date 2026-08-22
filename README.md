@@ -105,6 +105,30 @@ buildings that stand on pillars so you can walk in under them. The sun goes roun
 eight-minute cycle — dawn, noon, dusk, night with the windows lit — and it rains about
 a third of the time.
 
+## The mind you are carrying
+
+An artificial mind installs into the vessel, not the body, so it follows you through every
+change — but most of them refuse to run on flesh. Ultron will not. J.A.R.V.I.S. wants
+circuitry. Cerebro only amplifies a mind that was already reaching.
+
+All twelve effects do something you can see, and the readout under your health bars says
+which one you are carrying and lights up the moment it steps in.
+
+| | What it does for you |
+|---|---|
+| **Targeting Solution** | +12% critical chance, and your criticals hit harder |
+| **Combat Assist** | Once per fight, cancels a hit that would drop you below a quarter health |
+| **Orbital Strike** | The first blow you land in each fight hits 45% harder |
+| **Encouragement** | Energy comes back much faster while you are below half health |
+| **Drop Plating** | A shield goes up by itself the moment a fight starts |
+| **Adaptive Learning** | The longer a fight runs the less it hurts — 2% a second, to a quarter off |
+| **Density Control** | A quarter of everything aimed at you passes straight through |
+| **Backup Consciousness** | Once per sector, puts you back on your feet at 30% when the host falls |
+| **Precognition** | You slip one hit in seven, and afflictions land 30% less often |
+| **Combat Simulation** | +10% damage against anyone you have already beaten once |
+| **Field Repair** | Steadily puts health back while you are still standing |
+| **Force Allocation** | +30% energy regeneration |
+
 ## The ones who are not like the others
 
 Roughly one wanderer in seven carries a **role** — more the deeper you go, up to about two
@@ -151,7 +175,7 @@ and you can open any one file and know what it holds from its first line.
 
 ```
 src/data/      the roster, the gear, the minds, and the code that builds them
-src/rules/     stats, abilities, progression, the save file
+src/rules/     stats, abilities, progression, artificial minds, the save file
 src/gl/        matrix maths, the WebGL context, the shaders, the draw queue
 src/world/     the city plan, traffic, crowds, weather and the day
 src/body/      palette, skeleton, pose, and gear drawn onto a body
@@ -195,7 +219,7 @@ npm i playwright
 node test/regress.js
 ```
 
-It exits non-zero on any failure. Thirty-nine checks, currently all passing. Point it at a
+It exits non-zero on any failure. Forty-seven checks, currently all passing. Point it at a
 different build with `GAME_URL` — the bundle in `dist/` has to pass exactly the same set.
 
 ## Unofficial fan project

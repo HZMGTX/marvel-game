@@ -91,6 +91,7 @@ function onFoeDown(e){
 }
 /* No reserves. If the body falls, the spark is driven out of the fight. */
 function onHostDown(){
+  if(mindCatchesFall(G.player)) return;     /* not this time */
   G.ended = true;
   setTimeout(()=>openScreen("down"), 800);
 }

@@ -37,6 +37,7 @@ function dealDamage(att, def, mul, o){
   o = o||{};
   if(!canHit(att, def)) return 0;
   if(def.team==="you" && hasFx(def,"iframe")) return 0;
+  if(def === G.player && mindStopsHit(def, o)) return 0;
   const K = mitigationK(def);
   const dEff = def.st.d * (1 - (o.pierce?0.4:0));
   let dmg = att.st.p * mul * (K/(K+dEff)) * (att.team==="foe" ? ENEMY_DMG_MULT*(att.boss?1.35:1) : 1);
@@ -47,7 +48,10 @@ function dealDamage(att, def, mul, o){
   if(hasFx(def,"mark"))    dmg *= 1.25;
   if(att.ai && att.ai.fx==="simulate" && S.defeated[def.id]) dmg *= 1.10;
   if(att.elite === "stalker" && now() < (att.veil||0)) dmg *= 1.70;   /* out of nowhere */
-  if(def.ai && def.ai.fx==="adapt") dmg *= .82;
+  if(def.ai && def.ai.fx==="adapt") dmg *= mindMitigation(def);
+  if(att === G.player && mindFx(att,"strike") && !G.struck){
+    G.struck = true; dmg *= 1.45; mindFired("ORBITAL STRIKE");
+  }
   let crit = .05 + (att.st.s-def.st.s)/900 + (o.crit||0);
   if(att.ai && att.ai.fx==="targeting") crit += .12;
   const isCrit = Math.random() < Math.max(.02, Math.min(.5, crit));
@@ -56,7 +60,8 @@ function dealDamage(att, def, mul, o){
   dmg = Math.max(1, Math.round(dmg));
   if(hasFx(def,"shield")) dmg = Math.round(dmg*0.45);
   if(def.ai && def.ai.fx==="assist" && !def.usedAssist && def.hp-dmg < def.maxHp*.25 && def.hp > def.maxHp*.25){
-    def.usedAssist = true; feed(def.ai.name+" cancels the hit.","good"); return 0;
+    def.usedAssist = true; mindFired("COMBAT ASSIST");
+    feed(def.ai.name+" cancels the hit.","good"); return 0;
   }
   /* a guard, and the moment at the start of it that turns a hit around */
   if(def.blocking && !o.unblockable){
@@ -115,11 +120,13 @@ function dealDamage(att, def, mul, o){
     def.vx += Math.sin(a)*k; def.vz += Math.cos(a)*k;
     if(def.grounded) def.vy += k*0.34;
   }
-  if(o.bleed) setFx(def,"bleed",3200);
-  if(o.burn)  setFx(def,"burn",3000);
-  if(o.weaken)setFx(def,"weaken",3600);
-  if(o.mark)  setFx(def,"mark",4000);
-  if(o.stun)  setFx(def,"stun",o.stun);
+  /* precognition also reads the nastier riders coming */
+  const rider = mindFx(def,"foresee") && Math.random() < 0.30 ? 0 : 1;
+  if(o.bleed && rider) setFx(def,"bleed",3200);
+  if(o.burn  && rider) setFx(def,"burn",3000);
+  if(o.weaken&& rider) setFx(def,"weaken",3600);
+  if(o.mark  && rider) setFx(def,"mark",4000);
+  if(o.stun  && rider) setFx(def,"stun",o.stun);
   if(o.drain) att.hp = Math.min(att.maxHp, att.hp + dmg*o.drain);
   if(att.elite) eliteOnHit(att, def, dmg);
   /* the world stops for a breath when something really lands */

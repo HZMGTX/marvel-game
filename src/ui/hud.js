@@ -86,6 +86,13 @@ function updateHud(){
   el("btn-block").dataset.on = p.blocking ? "1":"0";
   el("btn-lock").dataset.on = G.lockTarget ? "1":"0";
   el("btn-surge").dataset.on = G.surge>=100 ? "1":"0";
+  const mind = el("tag-mind");
+  const chip = mindChip(p);
+  if(chip){
+    mind.style.display = "";
+    mind.textContent = chip;
+    mind.dataset.on = (G.mindFire && G.t < G.mindFire.until) ? "1" : "0";
+  } else mind.style.display = "none";
   const air = el("tag-air");
   if(p.fly){
     const sp = Math.hypot(p.vx, p.vz, p.vy);

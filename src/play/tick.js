@@ -7,6 +7,12 @@ function update(dt){
   G.t += dt;
   const p = G.player;
 
+  /* a mind that waits for a fight needs to know when one starts and ends */
+  const fighting = inCombat();
+  if(fighting && !G.wasFighting) mindsOnFightStart(p);
+  else if(!fighting && G.wasFighting && p) p.usedAssist = false;
+  G.wasFighting = fighting;
+
   if(p && !p.dead && !G.paused){
     const mv = readMove();
     /* movement is relative to where the camera is looking */
