@@ -6,7 +6,7 @@
 const G = {
   world:null, sector:"hk", ents:[], projs:[], parts:[], pops:[], beams:[], rings:[], arcs:[],
   orbits:[], drops:[], player:null, mission:null, cars:[], rain:[], weather:"clear", timeOfDay:0.28,
-  civT:0,
+  civT:0, echoCd:[0,0],
   camYaw:0, camPitch:0.26, camDist:6.4, shake:0,
   t:0, last:0, surge:0, combo:0, comboT:0, spawnT:0, bossEnt:null, lastCombat:-1e9,
   freeze:0, lockTarget:null,
@@ -133,7 +133,7 @@ function bossPhaseCheck(e){
     if(t.dead || t.team === "foe" || distXZ(t,e) > R) continue;
     const a = Math.atan2(t.x-e.x, t.z-e.z);
     t.vx += Math.sin(a)*16; t.vz += Math.cos(a)*16; t.vy += 5;
-    if(t.team === "you") dealDamage(e, t, 0.55, {unblockable:false});
+    if(t.team === "you" || t.team === "ally") dealDamage(e, t, 0.55, {unblockable:false});
   }
   shock(e.x, e.y+0.4, e.z, R, e.pal.c3, 900);
   burst(e.x, e.y+1, e.z, 40, e.pal.c3);

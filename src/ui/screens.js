@@ -5,7 +5,7 @@
 /* ---------------------------------------------------------------- screens */
 const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let menuTab = "body";
-let bx = {q:"", tag:"all", sector:"all", sort:"tier", cap:150};
+let bx = {q:"", tag:"all", sector:"all", sort:"tier", cap:150, mode:"become"};
 let cx = {q:"", cat:"beings", tag:"all", sector:"all", cap:120};
 
 function portraitTags(html){ return html; }

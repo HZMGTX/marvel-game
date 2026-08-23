@@ -28,6 +28,8 @@ addEventListener("keydown", ev=>{
     input.fly = 1; input.dodge = 1; tapped.dodge = true; ev.preventDefault(); }
   if(ev.code==="KeyQ") input.surgeGo = true;
   if(ev.code==="KeyT"){ toggleLock(); }
+  if(ev.code==="Digit1") callEcho(0);
+  if(ev.code==="Digit2") callEcho(1);
   if(ev.code==="KeyB" || ev.code==="Tab"){ ev.preventDefault(); openBodyPicker(); }
   if(ev.code==="Escape"||ev.code==="KeyP"){
     if(document.pointerLockElement) document.exitPointerLock();

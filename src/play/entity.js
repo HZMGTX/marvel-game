@@ -11,7 +11,7 @@ function makeEnt(beingId, x, z, team, o){
   const gear = isPlayer ? gearFor(beingId) : ((GEAR_BY_OWNER[beingId]||[])[0]||null);
   const pot  = isPlayer ? gearPotency(gear, beingId) : (gear?1:0);
   const ai   = isPlayer ? (S.installedAi?AI_BY_ID[S.installedAi]:null) : null;
-  const u = unitStats(b, {level:isPlayer?level(beingId):1, scale:o.scale||1, gear, pot, ai, player:isPlayer});
+  const u = unitStats(b, {level:isPlayer?level(beingId):(o.level||1), scale:o.scale||1, gear, pot, ai, player:isPlayer});
   /* a person is 1.8 m at size 1; the big ones get bigger */
   const size = (0.94 + b.tier*0.030) * (b.arch==="TITAN"?1.24:1) * (o.boss?1.18:1)
              * (b.tags.includes("beast")?0.94:1);

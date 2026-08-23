@@ -28,9 +28,13 @@ const PLAYER_HP_MULT = 1.7;
 const ENEMY_DMG_MULT = 0.55;
 const HIT_IFRAME = 340;
 
+/* An echo is you, so far as anything with a fist is concerned: it cannot be
+   hit by you and it cannot hit you, and neither of you touches a civilian. */
+const side = t => (t === "ally") ? "you" : t;
 function canHit(att, def){
-  if(!def || def.dead || def.team === att.team) return false;
-  if(def.team === "civ" && att.team === "you") return false;   /* not on your watch */
+  if(!att || !def || def.dead) return false;
+  if(side(def.team) === side(att.team)) return false;
+  if(def.team === "civ" && att.team !== "foe") return false;   /* not on your watch */
   return true;
 }
 function dealDamage(att, def, mul, o){
@@ -40,7 +44,8 @@ function dealDamage(att, def, mul, o){
   if(def === G.player && mindStopsHit(def, o)) return 0;
   const K = mitigationK(def);
   const dEff = def.st.d * (1 - (o.pierce?0.4:0));
-  let dmg = att.st.p * mul * (K/(K+dEff)) * (att.team==="foe" ? ENEMY_DMG_MULT*(att.boss?1.35:1) : 1);
+  let dmg = att.st.p * mul * (K/(K+dEff))
+          * (att.team==="foe" ? ENEMY_DMG_MULT*(att.boss?1.35:1) : att.team==="ally" ? ECHO_DMG : 1);
   if(hasFx(att,"charge")){ dmg *= 1.6; att.fx.charge = 0; }
   if(hasFx(att,"surge"))   dmg *= 1.6;
   if(hasFx(att,"weaken"))  dmg *= .70;
@@ -137,7 +142,7 @@ function dealDamage(att, def, mul, o){
   popNumber(def, dmg, isCrit, att.team==="you");
   spark(def.x, def.y + def.height*0.62, def.z, isCrit?14:7, att.team==="you"?SPARK_A:SPARK_B);
   if(att.team==="you"){ G.combo++; G.comboT = now()+2200; G.surge = Math.min(100, G.surge + dmg/def.maxHp*14); }
-  else G.surge = Math.min(100, G.surge + dmg/def.maxHp*88*(1 + vesselLevel("surge")*0.18));
+  else if(def === G.player) G.surge = Math.min(100, G.surge + dmg/def.maxHp*88*(1 + vesselLevel("surge")*0.18));
   if(def.hp<=0) killEnt(def);
   return dmg;
 }
@@ -148,5 +153,7 @@ function killEnt(e){
   burst(e.x, e.y+e.height*0.5, e.z, 30, e.pal.c3);
   SFX.down(e.x, e.z);
   G.shake = Math.min(1, G.shake + (e.boss?.9:.28));
-  if(e.team==="foe") onFoeDown(e); else if(e===G.player) onHostDown();
+  if(e.team==="foe") onFoeDown(e);
+  else if(e===G.player) onHostDown();
+  else if(e.team==="ally") onAllyDown(e);
 }

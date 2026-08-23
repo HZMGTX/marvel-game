@@ -17,7 +17,7 @@ function enterSector(id){
   G.rings = []; G.arcs = []; G.orbits = []; G.drops = [];
   G.bossEnt = null; G.surge = 0; G.combo = 0; G.ended = false; G.spawnT = 900;
   G.mission = null; G.lockTarget = null; G.freeze = 0; G.lastCombat = -1e9;
-  G.cars = []; G.rain = [];
+  G.cars = []; G.rain = []; G.echoCd = [0,0];
   G.usedBackup = false; G.struck = false; G.wasFighting = false; G.mindFire = null;
   buildHost();
   G.camYaw = 0; G.camPitch = 0.26;

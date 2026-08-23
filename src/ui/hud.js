@@ -40,8 +40,9 @@ function becomeHost(id){
   buildHostHud();
   return true;
 }
-function openBodyPicker(){
+function openBodyPicker(mode){
   menuTab = "body";
+  bx.mode = mode || "become";
   openScreen("pause");
 }
 
@@ -54,6 +55,27 @@ function buildHostHud(){
   drawPortrait(d.querySelector("canvas"), G.player.b);
   d.addEventListener("pointerdown", ev=>{ ev.stopPropagation(); openBodyPicker(); });
   host.appendChild(d);
+  for(let i=0;i<ECHO_SLOTS;i++) host.appendChild(echoSlotEl(i));
+}
+/* the two you hold: a face and a clock, or an empty frame that opens the list */
+function echoSlotEl(i){
+  const id = echoPick(i);
+  const b = document.createElement("button");
+  b.className = "slot slot--echo";
+  b.dataset.echoSlot = i;
+  if(id){
+    b.innerHTML = `<span class="kbd">${i+1}</span><canvas width="68" height="68"></canvas>`
+                + `<b>CALL</b><span class="cool"></span>`;
+    drawPortrait(b.querySelector("canvas"), BY_ID[id]);
+  } else {
+    b.innerHTML = `<span class="kbd">${i+1}</span><span class="empty">+</span><b>ECHO</b>`;
+  }
+  b.addEventListener("pointerdown", ev=>{
+    ev.stopPropagation();
+    if(echoPick(i)) callEcho(i);
+    else openBodyPicker("echo"+i);
+  });
+  return b;
 }
 
 let faceId = null;
@@ -113,6 +135,14 @@ function updateHud(){
     become.dataset.on = canBecome() ? "1" : "0";
     become.querySelector("b").textContent = canBecome() ? "BECOME" : "LOCKED";
   }
+  document.querySelectorAll("#hud-squad .slot--echo").forEach(btn=>{
+    const st = echoStatus(+btn.dataset.echoSlot);
+    btn.dataset.on = st.ready ? "1" : "0";
+    btn.dataset.empty = st.empty ? "1" : "0";
+    btn.querySelector("b").textContent = st.label;
+    const c = btn.querySelector(".cool");
+    if(c) c.style.transform = `scaleY(${st.cool})`;
+  });
   if(faceId !== p.id){ faceId = p.id; drawPortrait(el("face"), p.b); }
 }
 

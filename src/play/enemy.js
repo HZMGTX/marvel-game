@@ -5,7 +5,7 @@
 const MAX_ATTACKERS = 3;
 function attackerCount(){ let n=0; for(const e of G.ents) if(!e.dead && e.team==="foe" && e.engaged) n++; return n; }
 function enemyThink(e, dt){
-  const p = G.player;
+  const p = foeTarget(e);
   if(!p || p.dead){                       /* nobody to come for — walk it off */
     e.engaged = false;
     e.aiT -= dt;

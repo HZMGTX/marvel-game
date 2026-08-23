@@ -478,6 +478,106 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
       o.bossKitCount = new Set(Object.values(BOSS_KIT)).size;
     })();
 
+    // echoes: two bodies you have worn, called back to fight beside you
+    (()=>{
+      const P = G.player;
+      const clear = ()=>{ G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9; };
+      const pool = sectorBeings(G.sector).filter(b2=>b2.id!==P.id).map(b2=>b2.id);
+      const A = pool[0], B = pool[1];
+      [A,B].forEach(id=>{ if(!S.unlocked.includes(id)) S.unlocked.push(id); });
+      clear();
+      G.echoCd = [0,0];
+
+      o.echoSet = setEcho(0, A) && setEcho(1, B)
+                  && S.echoes[0]===A && S.echoes[1]===B;
+      setEcho(1, A);                                 /* one body, one slot */
+      o.echoNoDouble = S.echoes[0]===null || S.echoes[1]===null;
+      setEcho(0, A); setEcho(1, B);
+
+      /* mid-fight the choice closes, exactly like taking a body does */
+      G.lastCombat = G.t;
+      o.echoLocked = setEcho(0, B) === false && S.echoes[0] === A;
+      G.lastCombat = -1e9;
+
+      o.echoCall = callEcho(0) && callEcho(1);
+      const outs = G.ents.filter(e=>e.team==="ally" && !e.dead);
+      o.echoOut = outs.length === 2 && outs.every(e=>e.echoUntil > now());
+      o.echoAgain = callEcho(0) === false;            /* already standing */
+
+      /* it comes back as strong as the bond you built wearing it */
+      const lvWas = S.levels[A];
+      S.levels[A] = 1; const low  = makeEnt(A,0,0,"ally",{level:level(A)});
+      S.levels[A] = 8; const high = makeEnt(A,0,0,"ally",{level:level(A)});
+      S.levels[A] = lvWas;
+      o.echoScales = high.st.p > low.st.p*1.2 && high.maxHp > low.maxHp;
+
+      /* it is you, as far as anything with a fist is concerned */
+      const mate = outs[0];
+      const foe1 = makeEnt(pool[2]||A, P.x+4, P.z, "foe", {});
+      const civ  = G.ents.find(e=>e.team==="civ");
+      o.echoFriendly = !canHit(mate, P) && !canHit(P, mate)
+                       && canHit(mate, foe1) && canHit(foe1, mate)
+                       && (!civ || !canHit(mate, civ));
+
+      /* and it hits softer than the body would */
+      const before = foe1.hp;
+      dealDamage(mate, foe1, 1, {});
+      const echoHit = before - foe1.hp;
+      foe1.hp = foe1.maxHp; foe1.poise = 0; foe1.fx = {};
+      const you = makeEnt(mate.id, P.x, P.z, "you", {});
+      you.st = Object.assign({}, mate.st);
+      const b2 = foe1.hp; dealDamage(you, foe1, 1, {}); const realHit = b2 - foe1.hp;
+      o.echoSofter = echoHit < realHit;
+      foe1.hp = foe1.maxHp; foe1.fx = {}; foe1.poise = 0;
+
+      /* it goes for whatever is already hitting you, not just whatever is near */
+      const far = makeEnt(pool[2]||A, mate.x+9, mate.z, "foe", {});
+      far.tgt = P; far.tgtT = now()+9999;
+      const near = makeEnt(pool[2]||A, mate.x+5, mate.z+1, "foe", {});
+      near.tgt = null;
+      G.ents.push(far, near);
+      o.echoPicksYourFight = allyTarget(mate) === far;
+
+      /* it pulls something off you only by getting between you and it */
+      const bully = makeEnt(pool[2]||A, 0, 0, "foe", {});
+      G.ents.push(bully);
+      bully.x = 0; bully.z = 0; bully.tgt = null; bully.tgtT = 0;
+      mate.x = 2; mate.z = 0; P.x = 24; P.z = 0;
+      o.echoTanks = foeTarget(bully) === mate;
+      mate.x = 30; mate.z = 30; bully.tgt = null; bully.tgtT = 0;
+      o.echoReleases = foeTarget(bully) === P;
+
+      /* with nothing to hit it stays with you */
+      G.ents = G.ents.filter(e=>e.team!=="foe");
+      mate.x = P.x + 20; mate.z = P.z; mate.mx = mate.mz = 0;
+      allyThink(mate, 33);
+      o.echoFollows = mate.mx < -0.4;                 /* pointed back at you */
+
+      /* the clock runs out, and the wait starts from there */
+      const m2 = outs[1];
+      m2.echoUntil = now() - 1;
+      echoTick();
+      o.echoFades = m2.dead && G.echoCd[m2.echoSlot] > now();
+      o.echoWaits = callEcho(m2.echoSlot) === false && echoStatus(m2.echoSlot).cool > 0.5;
+
+      /* and a longer memory stands longer and comes back sooner */
+      const cd0 = echoCooldown(), lf0 = echoLife();
+      S.vessel = S.vessel||{}; S.vessel.echo = VESSEL_MAX;
+      o.echoRank = echoCooldown() < cd0 && echoLife() > lf0 && !!VESSEL_UP.echo;
+      delete S.vessel.echo;
+
+      /* both slots are on the HUD under your own face */
+      buildHostHud();
+      const slots = [...document.querySelectorAll("#hud-squad .slot--echo")];
+      updateHud();
+      o.echoHud = slots.length === ECHO_SLOTS
+                  && slots.every(s2=>s2.querySelector("b").textContent.length > 0);
+
+      clear();
+      G.echoCd = [0,0]; S.echoes = [null,null]; buildHostHud();
+      P.hp = P.maxHp; P.fx = {}; P.x = 0; P.z = 0; P.dead = false;
+    })();
+
     // elites: six roles, each doing the one thing it says it does
     (()=>{
       const clear = ()=>{ G.ents = G.ents.filter(e=>e.team==="you"); G.lastCombat = -1e9; };
@@ -619,7 +719,8 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
         stale:   /1 2 3/.test(c) || /as often as you like/i.test(c),
         dive:    /dive/i.test(c),
         roles:   /WARDEN/.test(c) && /HERALD/.test(c),
-        mind:    /artificial mind/i.test(c)
+        mind:    /artificial mind/i.test(c),
+        echoes:  /Echoes/.test(c) && /<b>1<\/b>/.test(c)
       };
     })();
 
@@ -748,6 +849,18 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   ok("every sector's boss has a beat of its own",
      r.bossKitGaps.length===0 && r.bossKitCount===6, r.bossKitGaps.join(", "));
   ok("and all six of those beats land", r.bossKits.length===0, r.bossKits.join(" | "));
+  ok("two echoes are held, and never the same body twice", r.echoSet && r.echoNoDouble);
+  ok("holding one is a choice you make out of a fight", r.echoLocked);
+  ok("calling one stands it up beside you", r.echoCall && r.echoOut && r.echoAgain);
+  ok("an echo is as strong as the bond you built", r.echoScales);
+  ok("it cannot be hit by you and cannot hit you", r.echoFriendly);
+  ok("and it lands softer than the body would", r.echoSofter);
+  ok("it goes for whatever is already hitting you", r.echoPicksYourFight);
+  ok("it pulls a foe off you only by getting between", r.echoTanks && r.echoReleases);
+  ok("with nothing to hit it stays with you", r.echoFollows);
+  ok("it runs out, and the wait starts there", r.echoFades && r.echoWaits);
+  ok("a longer memory stands longer and returns sooner", r.echoRank);
+  ok("both echoes read on the HUD", r.echoHud);
   ok("six elite roles", r.eliteRoles);
   ok("every role reshapes its host", r.eliteApplies);
   ok("warden hardens the room", r.eliteWarden);
@@ -769,7 +882,7 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   ok("audio ready", r.sound);
   ok("the controls card describes this game",
      r.controls.become && r.controls.theRule && !r.controls.stale
-     && r.controls.dive && r.controls.roles && r.controls.mind,
+     && r.controls.dive && r.controls.roles && r.controls.mind && r.controls.echoes,
      JSON.stringify(r.controls));
   ok("every sector has something to say", r.storySilent.length===0, r.storySilent.join(","));
   ok("bosses greet you by name where written", r.bossLines);

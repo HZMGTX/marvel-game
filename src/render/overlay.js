@@ -23,6 +23,23 @@ function drawOverlay(){
       UX.globalAlpha = 1;
       continue;
     }
+    if(e.team === "ally"){
+      if(near > 70) continue;
+      const sc1 = project(e.x, e.y + e.height*1.16, e.z);
+      if(!sc1) continue;
+      const w1 = 52, left = Math.max(0, Math.ceil((e.echoUntil - now())/1000));
+      UX.globalAlpha = Math.max(0.35, 1 - near/74);
+      UX.fillStyle = "rgba(0,0,0,.6)"; UX.fillRect(sc1.x-w1/2-1, sc1.y-1, w1+2, 6);
+      UX.fillStyle = "#5FE39A";
+      UX.fillRect(sc1.x-w1/2, sc1.y, w1*Math.max(0,e.hp/e.maxHp), 4);
+      UX.font = '700 10px "Chivo Mono",ui-monospace,monospace'; UX.textAlign = "center";
+      UX.lineWidth = 3; UX.strokeStyle = "rgba(0,0,0,.9)";
+      const lbl = e.b.name + " \u00b7 " + left + "s";
+      UX.strokeText(lbl, sc1.x, sc1.y-6);
+      UX.fillStyle = "#5FE39A"; UX.fillText(lbl, sc1.x, sc1.y-6);
+      UX.globalAlpha = 1;
+      continue;
+    }
     if(!e.boss && near > 40) continue;
     const sc = project(e.x, e.y + e.height*1.16, e.z);
     if(!sc || sc.x<-140 || sc.x>VW+140) continue;
@@ -163,7 +180,8 @@ function drawMini(){
   }
   for(const e of G.ents){
     if(e.dead) continue;
-    MCX.fillStyle = e===G.player ? "#41E3EA" : e.boss ? "#F7BC46" : "#FF5340";
+    MCX.fillStyle = e===G.player ? "#41E3EA" : e.boss ? "#F7BC46"
+                  : e.team==="ally" ? "#5FE39A" : e.team==="civ" ? "#3E5A78" : "#FF5340";
     const s = (e===G.player||e.boss)?4:3;
     MCX.fillRect((e.x+WORLD/2)*S2-s/2, (e.z+WORLD/2)*S2-s/2, s, s);
   }

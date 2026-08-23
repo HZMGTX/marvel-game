@@ -4,7 +4,7 @@
 
 /* ---------------------------------------------------------------- actions */
 SCREENS.addEventListener("click", ev=>{
-  const t = ev.target.closest("[data-act],[data-tab],[data-become],[data-gear],[data-ai],[data-sector],[data-start],[data-cat],[data-quality],[data-mission],[data-abil],[data-vessel],[data-geargrade]");
+  const t = ev.target.closest("[data-act],[data-tab],[data-become],[data-gear],[data-ai],[data-sector],[data-start],[data-cat],[data-quality],[data-mission],[data-abil],[data-vessel],[data-geargrade],[data-bxmode],[data-echo]");
   if(!t) return;
   audioInit(); SFX.ui();
   const d = t.dataset;
@@ -86,6 +86,12 @@ SCREENS.addEventListener("click", ev=>{
     resize(); if(G.world) setWeather(G.weather); openScreen("pause"); return; }
   if(d.tab){ menuTab = d.tab; openScreen("pause"); return; }
   if(d.cat){ cx.cat = d.cat; cx.cap = 120; openScreen("pause"); return; }
+  if(d.bxmode!==undefined){ bx.mode = d.bxmode; openScreen("pause"); return; }
+  if(d.echo!==undefined){
+    const i = d.echo.indexOf(":");
+    setEcho(+d.echo.slice(0,i), d.echo.slice(i+1) || null);
+    openScreen("pause"); return;
+  }
   if(d.become){
     if(becomeHost(d.become)) closeScreen();
     else openScreen("pause");

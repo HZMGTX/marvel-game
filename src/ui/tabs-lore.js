@@ -62,6 +62,7 @@ function rulesTab(){
       <p class="note"><b>Artificial minds install into you, not the body.</b> Thirty of them. J.A.R.V.I.S. rides in anything with circuitry, Ultron refuses flesh, Cerebro only amplifies a mind that was already reaching.</p>
       <p class="note"><b>Eight locals draws the boss out.</b> Put the boss down and the sector is clear, the next one opens, and a mind comes free.</p>
       <p class="note"><b>Essence and levels.</b> Every kill feeds every host you are carrying. Levels are permanent.</p>
+      <p class="note"><b>Two of them come back.</b> The spark cannot wear two bodies at once — that rule never bends — but it remembers every one it has worn, and an echo is that memory stood up in the street. Levelling a body, mastering it, binding its weapon: all of it comes back with the echo. Six hundred names stop being a wardrobe and start being a bench.</p>
     </div>
     <div class="divider" style="margin:14px 0"></div>
     <div class="eyebrow">Sound</div>

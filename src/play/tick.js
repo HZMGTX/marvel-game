@@ -58,6 +58,7 @@ function update(dt){
       /* something is coming for you — that counts as being in a fight */
       if(p && !p.dead && e.engaged && distXZ(e,p) < 25) G.lastCombat = G.t;
     }
+    else if(e.team==="ally"){ allyThink(e, dt); }
     else if(e.team==="civ"){ civThink(e, dt); }
     else if(G.paused){ e.mx = e.mz = 0; }
     stepEnt(e, dts);
@@ -93,7 +94,7 @@ function update(dt){
         gone = true; spark(pr.x,pr.y,pr.z,6,pr.c); break; }
     }
     if(!gone) for(const t of G.ents){
-      if(t.dead||t.team===pr.team||pr.hit.has(t)) continue;
+      if(pr.hit.has(t) || !canHit(pr.owner, t)) continue;
       if(Math.hypot(t.x-pr.x, (t.y+t.height*.55)-pr.y, t.z-pr.z) < t.rad+pr.r+0.4){
         pr.hit.add(t); dealDamage(pr.owner,t,pr.mul,pr.opts);
         if(!pr.pierce) gone = true;
@@ -110,7 +111,7 @@ function update(dt){
     ob.py = ob.owner.y + ob.owner.height*0.6;
     ob.pz = ob.owner.z + Math.cos(ob.ang)*ob.rad;
     for(const t of G.ents){
-      if(t.dead||t.team===ob.owner.team) continue;
+      if(!canHit(ob.owner, t)) continue;
       /* keyed per body, not per character — two of the same enemy used to
          share one cooldown, so only one of them could ever be cut */
       if((ob.cool[t.uid]||0) > now()) continue;
@@ -160,6 +161,7 @@ function update(dt){
     const e = G.ents[i];
     if(e.dead && now()-e.deadT > 1000 && e!==G.player) G.ents.splice(i,1);
   }
+  echoTick();
   updateCars(dt); updateRain(dt); stepSky(dt); hintTick();
   updateMission(dt);
   if(G.combo && now()>G.comboT) G.combo = 0;

@@ -26,6 +26,13 @@ owner. To use a suit properly you have to *be* the person it was built for; in a
 else's hands it sits inert. Ten kills as its rightful owner attunes a piece to the vessel,
 and after that any body can echo it at 55%, which is never the same thing.
 
+**Two of the bodies you have worn come back.** The spark cannot be in two at once — that
+rule never bends — but it remembers every one it has been in, and an echo is that memory
+stood up in the street beside you. Forty seconds, a little over half strength, and it
+carries everything you built into that body: its level, its mastery, its bound weapon. It
+goes for whatever is already hitting you, and it can pull something off you by getting in
+the way. Which two you hold is a choice you make out of a fight, like every other one.
+
 **Artificial minds install into you, not into the body.** They follow you through every
 change. Most of them refuse to run on flesh — Ultron will not, J.A.R.V.I.S. wants
 circuitry, Cerebro only amplifies a mind that was already reaching.
@@ -56,6 +63,7 @@ already running. Finish three and new work comes in.
 | Roll | `Shift` (if you can't fly) | ROLL |
 | Lock on | `T` | LOCK |
 | Change body | `B` | BECOME |
+| Call an echo | `1` / `2` | the two faces beside BECOME |
 | Menu | `Esc` | ☰ |
 
 Scroll to pull the camera in or out. Jump onto the rooftops — they are solid.
@@ -94,7 +102,8 @@ land 40% harder.
 Essence buys four things, and none of it can be done mid-fight:
 
 - **The vessel** — a deeper surge, faster out-of-combat recovery, more essence per kill,
-  longer invulnerability on rolls. These carry across every body you wear.
+  longer invulnerability on rolls, and a longer memory so your echoes stand longer and come
+  back sooner. These carry across every body you wear.
 - **Abilities** — each of a body's four moves can be worked up three ranks: +9% damage and
   6% faster recovery per rank.
 - **Gear** — three ranks per piece, and each rank also lowers how many kills it takes to
@@ -208,7 +217,7 @@ because that is the rule browsers hold you to, and there is an on/off switch in 
 
 ## How the source is laid out
 
-`index.html` is a page shell: the HUD markup and a list of forty-two source files in the
+`index.html` is a page shell: the HUD markup and a list of forty-eight source files in the
 order they load. Nothing is bundled, transpiled or minified — what you read is what runs,
 and you can open any one file and know what it holds from its first line.
 
@@ -219,7 +228,7 @@ src/gl/        matrix maths, the WebGL context, the shaders, the draw queue
 src/world/     the city plan, traffic, crowds, weather and the day
 src/body/      palette, skeleton, pose, and gear drawn onto a body
 src/fight/     damage, guards, parries, effects, the air, and what the four slots do
-src/play/      entities, enemy minds, elite roles, the step, the frame, missions, story
+src/play/      entities, enemy minds, elite roles, boss beats, echoes, the step, the frame, missions, story
 src/render/    the camera, the passes, the effects, the flat overlay
 src/audio/     every sound, synthesised
 src/ui/        controls, HUD, screens, and what their buttons do
@@ -260,13 +269,13 @@ node test/regress.js
 ```
 
 `.github/workflows/checks.yml` does the same thing on a runner — syntax-check all
-46 source files, fold the bundle, drive both builds through the whole harness. It is
+48 source files, fold the bundle, drive both builds through the whole harness. It is
 set to **Run workflow** only: on push it failed in two seconds with no logs, which is
 what Actions does on a private repository when it cannot start a runner. Once Actions
 can run on the repo, put the `push` and `pull_request` triggers back and it works as
 written.
 
-It exits non-zero on any failure. Eighty-two checks, currently all passing — the last four
+It exits non-zero on any failure. Ninety-four checks, currently all passing — the last four
 of them in a real 390×844 touch context, checking that the phone build comes up, that nothing
 on its HUD collides or runs off the edge, and that a quick tap fires an ability. Point it at a
 different build with `GAME_URL` — the bundle in `dist/` has to pass exactly the same set.

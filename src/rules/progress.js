@@ -14,7 +14,8 @@ const VESSEL_UP = {
   surge:  {name:"Deeper spark",   line:"The surge meter fills 18% faster per rank, and burning through lasts a second longer."},
   regen:  {name:"Quicker knit",   line:"Out of combat the body closes up 45% faster per rank."},
   essence:{name:"Finer reading",  line:"Everything you beat gives 14% more essence per rank."},
-  iframe: {name:"Looser grip",    line:"Rolls and recoveries give you 70 ms more untouchable per rank."}
+  iframe: {name:"Looser grip",    line:"Rolls and recoveries give you 70 ms more untouchable per rank."},
+  echo:   {name:"Longer memory",  line:"An echo stands 7 seconds longer per rank, and comes back 15% sooner."}
 };
 
 const abilLevel  = (hid, slot) => ((S.abil||{})[hid]||{})[slot] || 0;

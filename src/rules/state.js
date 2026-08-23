@@ -7,7 +7,7 @@ const SAVE_KEY = "multiverse-vessel/v2";
 const clone = o => JSON.parse(JSON.stringify(o));
 const DEFAULT_STATE = {
   started:false, unlocked:[], gearOwned:[], attuned:[], aiOwned:[], installedAi:null,
-  host:null, loadout:{}, levels:{}, xp:{}, essence:0,
+  host:null, loadout:{}, levels:{}, xp:{}, essence:0, echoes:[null,null],
   missionsDone:0, missionRound:0, missionSeen:{}, story:{},
   abil:{}, vessel:{}, gearLv:{}, mastery:{}, hints:{},
   defeated:{}, cleared:{}, kills:{}, sector:"hk", wins:0, gearKills:{}, tutorial:0,
@@ -23,6 +23,9 @@ function load(){
     /* a save from the three-slot build keeps whoever was in the first slot */
     if(!S.host && Array.isArray(S.squad)) S.host = S.squad.find(x=>x && S.unlocked.includes(x)) || null;
     if(S.host && !S.unlocked.includes(S.host)) S.host = null;
+    if(!Array.isArray(S.echoes)) S.echoes = [null,null];
+    S.echoes = S.echoes.slice(0,2).map(id => (id && S.unlocked.includes(id)) ? id : null);
+    while(S.echoes.length < 2) S.echoes.push(null);
     delete S.squad;
     return true;
   }catch(e){ return false; }

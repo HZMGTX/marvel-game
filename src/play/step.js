@@ -23,7 +23,7 @@ function stepEnt(e, dts){
     e.vx = Math.sin(e.dashYaw)*e.dashSpeed;
     e.vz = Math.cos(e.dashYaw)*e.dashSpeed;
     for(const t of G.ents){
-      if(t.dead||t.team===e.team||e.dashHit.has(t)) continue;
+      if(e.dashHit.has(t) || !canHit(e,t)) continue;
       if(distXZ(t,e) < e.rad+t.rad+0.7 && Math.abs(t.y-e.y)<2){
         e.dashHit.add(t);
         if(e.dashMul > 0) dealDamage(e,t,e.dashMul,e.dashOpts);

@@ -4,6 +4,8 @@
 
 function bodyTab(){
   const locked = !canBecome();
+  const mode = bx.mode || "become";
+  const slot = mode.startsWith("echo") ? +mode.slice(4) : -1;
   const cur = S.host ? BY_ID[S.host] : null;
   const q = bx.q.trim().toLowerCase();
   let list = S.unlocked.map(id=>BY_ID[id]).filter(Boolean).filter(b=>
@@ -17,8 +19,9 @@ function bodyTab(){
     const u = unitStats(b, {level:level(b.id), gear:gearFor(b.id),
                             pot:gearPotency(gearFor(b.id), b.id), player:true});
     const g = GEAR_BY_OWNER[b.id]||[];
-    const on = b.id===S.host;
-    return `<button class="cardb" data-become="${b.id}" aria-pressed="${on}"
+    const on = slot>=0 ? b.id===echoPick(slot) : b.id===S.host;
+    const pick = slot>=0 ? `data-echo="${slot}:${b.id}"` : `data-become="${b.id}"`;
+    return `<button class="cardb" ${pick} aria-pressed="${on}"
       style="flex-direction:column;align-items:stretch;gap:6px${locked&&!on?";opacity:.55":""}">
       <span class="row" style="gap:8px;flex-wrap:nowrap">
         <canvas width="76" height="76" data-being="${b.id}"></canvas>
@@ -34,7 +37,7 @@ function bodyTab(){
         <span class="stat"><b>${u.st.s}</b><i>Spd</i></span>
         <span class="stat"><b>${u.maxHp}</b><i>Hp</i></span>
       </span>
-      ${on?`<span class="s" style="color:var(--good)">You are wearing this one</span>`:""}
+      ${on?`<span class="s" style="color:var(--good)">${slot>=0?"Held as echo "+(slot+1):"You are wearing this one"}</span>`:""}
     </button>`;
   };
 
@@ -48,10 +51,21 @@ function bodyTab(){
       ${cur?`<canvas width="120" height="120" data-being="${cur.id}" style="width:60px;height:60px;border:2px solid var(--line)"></canvas>`:""}
     </div>
     <div class="divider" style="margin:12px 0"></div>
+    <div class="row" style="gap:6px;margin-bottom:10px">
+      ${[["become","Wear it"],["echo0","Echo I"],["echo1","Echo II"]].map(([m,lbl])=>{
+        const held = m!=="become" ? echoPick(+m.slice(4)) : null;
+        return `<button class="btn btn--sm ${mode===m?"btn--go":"btn--ghost"}" data-bxmode="${m}">${lbl}${held?" · "+esc(BY_ID[held].name):""}</button>`;
+      }).join("")}
+      ${slot>=0 && echoPick(slot) ? `<button class="btn btn--sm btn--ghost" data-echo="${slot}:">Let it go</button>` : ""}
+    </div>
     ${locked
       ? `<p class="note" style="color:var(--flare)"><b>You cannot let go of a body mid-fight.</b>
           Break away — get clear of anything hunting you and stop trading blows — and the choice opens back up
           after ${combatLeft()} more second${combatLeft()===1?"":"s"}.</p>`
+      : slot>=0
+      ? `<p class="note">An echo is a body you have worn, stood back up beside you for ${Math.round(echoLife()/1000)} seconds.
+          It fights with everything that body has — its level, its mastery, its bound weapon — at a little over half strength,
+          and it can pull something off you by getting in the way. Call it with <b>${slot+1}</b>, or the face under your portrait.</p>`
       : `<p class="note">Out of a fight you can be anyone you have beaten. Health comes back full when you change,
           and whatever is bound to that body comes with it.</p>`}
   </div>

@@ -27,7 +27,9 @@ function aimPitch(from, to, muzzle){
 
 /* who a shot is meant for: your lock, or whatever is in front of you */
 function aimTarget(e){
-  if(e.team !== "you") return (G.player && !G.player.dead) ? G.player : null;
+  if(e.team === "ally") return allyTarget(e);
+  if(e.team !== "you") return (e.tgt && !e.tgt.dead) ? e.tgt
+                            : (G.player && !G.player.dead) ? G.player : null;
   if(G.lockTarget && !G.lockTarget.dead) return G.lockTarget;
   const f = fwd(e);
   let best = null, bd = 36;

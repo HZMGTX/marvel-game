@@ -48,6 +48,7 @@ function controlsHtml(){
     <div><h3>Menu</h3><p class="note"><b>Esc</b> or the &#9776; button — hosts, gear, minds, sectors and the codex.</p></div>
     <div><h3>Gear on the ground</h3><p class="note">Beat someone carrying something and it drops where they fell. Walk over it to take it.</p></div>
     <div><h3>The ones with a word over them</h3><p class="note">Some of them carry a role — WARDEN, STALKER, BREAKER, MARKSMAN, LEECH, HERALD — announced above their head before they reach you, with a coloured ring under their feet. Each does one thing, and the feed tells you what beats it the first time you meet one.</p></div>
+    <div><h3>Echoes</h3><p class="note"><b>1</b> and <b>2</b>, or the two faces beside BECOME. An echo is a body you have already worn, stood back up beside you for forty seconds: it fights with that body's level, mastery and bound weapon at a little over half strength, it goes for whatever is already hitting you, and it can pull something off you by getting in the way. Which two you hold is a choice you make out of a fight, like every other one.</p></div>
     <div><h3>The mind you carry</h3><p class="note">An artificial mind rides in you rather than in the body, so it follows you through every change. The line under your health bars says which effect you have, and lights up the moment it steps in.</p></div>
   </div>`;
 }
