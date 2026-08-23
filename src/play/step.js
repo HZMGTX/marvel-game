@@ -6,6 +6,7 @@ function stepEnt(e, dts){
   let spd = e.act.spd*MPU * (1 + (e.st.s-30)/300) * (e.spdMul||1);
   if(e.blocking){ spd *= 0.42; e.nrg = Math.max(0, e.nrg - BLOCK_DRAIN*dts); if(e.nrg<=0) e.blocking = false; }
   if(hasFx(e,"haste")) spd *= 1.35;
+  if(hasFx(e,"chill")) spd *= 0.52;
   if(hasFx(e,"stun")) spd = 0;
   if(e.fly) spd *= 1.7 + (e.dive||0)*1.05 + (e.boost||0);
   if(e.enrage) spd *= e.enrage;
@@ -97,6 +98,7 @@ function stepEnt(e, dts){
   if(hasFx(e,"regen") && G.t % 420 < dts*1000) e.hp = Math.min(e.maxHp, e.hp+e.maxHp*0.014);
   if(e.ai && e.ai.fx==="repair" && G.t % 900 < dts*1000) e.hp = Math.min(e.maxHp, e.hp+e.maxHp*0.012);
   if(e.team==="you" && now()-(e.lastHurt||0) > 4200 && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp*0.05*dts*(1 + vesselLevel("regen")*0.45));
+  traitTick(e);
   if(e.boss) bossPhaseCheck(e);
   if(e.hp<=0 && !e.dead){ killEnt(e); return; }
 

@@ -478,6 +478,148 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
       o.bossKitCount = new Set(Object.values(BOSS_KIT)).size;
     })();
 
+    // traits: the one thing that is true of this person and nobody quite like them
+    (()=>{
+      const P = G.player;
+      const clear = ()=>{ G.ents = G.ents.filter(e=>e===P); G.lastCombat = -1e9; G.beams.length = 0; };
+      const bad = [], spread = {};
+      for(const bb of BEINGS){
+        const k = traitOf(bb);
+        if(!TRAITS[k]){ bad.push(bb.name+" -> "+k); continue; }
+        spread[k] = (spread[k]||0)+1;
+      }
+      o.traitBad = bad.slice(0,6);
+      o.traitAll = Object.keys(spread).length === Object.keys(TRAITS).length;
+      const counts = Object.values(spread);
+      o.traitSpread = Math.max(...counts) / Math.min(...counts);
+      /* the tags that say something decide it, whatever order they were written in */
+      o.traitFromTags = BEINGS.filter(bb=>bb.tags.includes("symbiote")).every(bb=>traitOf(bb)==="venomous")
+                     && BEINGS.filter(bb=>bb.tags.includes("demon")).every(bb=>traitOf(bb)==="kindled")
+                     && BEINGS.filter(bb=>bb.tags.includes("spider") && !bb.tags.includes("symbiote"))
+                              .every(bb=>traitOf(bb)==="untouchable");
+      o.traitStable = traitOf(BY_ID.daredevil) === traitOf(BY_ID.daredevil);
+
+      const withTrait = k => BEINGS.find(bb=>traitOf(bb)===k);
+      const att = k => { const e = makeEnt(withTrait(k).id, P.x, P.z, "you", {});
+                         e.st = {p:60,d:40,s:40,n:60}; return e; };
+      const dummyWas = _trait["hand-assassin"];
+      _trait["hand-assassin"] = "kindled";      /* nothing that changes taking a hit */
+      delete _act["hand-assassin"];
+      const foeAt = (dx,dz)=>{ const t = makeEnt("hand-assassin", P.x+dx, P.z+(dz||0), "foe", {});
+                               t.maxHp = 1e7; t.hp = t.maxHp; t.fx = {}; t.poise = 0;
+                               G.ents.push(t); return t; };
+      const missing = [];
+
+      clear();
+      let t = foeAt(2);
+      dealDamage(att("kindled"), t, 1, {});
+      if(!hasFx(t,"burn")) missing.push("kindled");
+
+      t.fx = {};
+      dealDamage(att("frostbound"), t, 1, {});
+      if(!hasFx(t,"chill")) missing.push("frostbound");
+      (()=>{                                   /* and a chill is felt in the legs */
+        t.fx = {}; t.mx = 1; t.mz = 0; t.vx = 0;
+        const x0 = t.x; stepEnt(t, 0.25); const warm = Math.abs(t.x-x0);
+        t.x = x0; t.vx = 0; setFx(t,"chill",3000); stepEnt(t, 0.25);
+        if(!(Math.abs(t.x-x0) < warm*0.8)) missing.push("frostbound/slow");
+      })();
+
+      /* the jump lands on one body and stops there — it does not cascade */
+      clear();
+      const A = foeAt(2), B = foeAt(4), C = foeAt(6);
+      dealDamage(att("arcing"), A, 1, {});
+      const jumped = (B.hp < B.maxHp ? 1 : 0) + (C.hp < C.maxHp ? 1 : 0);
+      if(jumped !== 1 || !G.beams.length) missing.push("arcing("+jumped+")");
+
+      clear(); t = foeAt(2);
+      const v = att("venomous"); v.hp = v.maxHp*0.5;
+      const vhp = v.hp;
+      dealDamage(v, t, 1, {});
+      if(!hasFx(t,"bleed") || v.hp <= vhp) missing.push("venomous");
+
+      /* the three that rewrite the kit do it on their own copy of the table */
+      (()=>{
+        const kb = withTrait("kinetic"), rb = withTrait("reaving"), sb = withTrait("swarming");
+        const k = actFor(kb), r2 = actFor(rb), s2 = actFor(sb);
+        if(!(k.light.cd < ACT[kb.arch].light.cd && k.spd > ACT[kb.arch].spd)) missing.push("kinetic");
+        const ru = ACT[rb.arch].ult;
+        if(!((r2.ult.radius||0) > (ru.radius||0) || (r2.ult.len||0) > (ru.len||0)
+             || (r2.ult.arc||0) > (ru.arc||0))) missing.push("reaving");
+        const sp = ACT[sb.arch].power;
+        if(!((s2.power.count||1) > (sp.count||1)
+             || (ACT[sb.arch].light.kind==="shot" && s2.light.kind==="spread"))) missing.push("swarming");
+        if(k === ACT[kb.arch] || ACT[kb.arch].light.cd === k.light.cd) missing.push("kinetic/shared");
+      })();
+
+      clear(); t = foeAt(2);
+      (()=>{                                   /* siege moves people and breaks stances */
+        /* averaged, because a single hit can crit and one sample proves nothing */
+        const run = a => { let k = 0, po = 0;
+          for(let i=0;i<200;i++){
+            t.vx = t.vz = 0; t.poise = 0; t.poiseT = 0; t.fx = {};
+            dealDamage(a, t, 1, {knock:200});
+            k += Math.hypot(t.vx, t.vz); po += t.poise;
+          }
+          return {k:k/200, po:po/200}; };
+        const plain = run(att("kindled")), heavy = run(att("siege"));
+        if(!(heavy.k > plain.k*1.4 && heavy.po > plain.po*1.6))
+          missing.push("siege k"+(heavy.k/plain.k).toFixed(2)+" po"+(heavy.po/plain.po).toFixed(2));
+      })();
+
+      clear(); t = foeAt(2); t.maxHp = 1e9; t.hp = t.maxHp;
+      (()=>{                                   /* precise cuts deeper into armour */
+        const mean = k => { const e = att(k); let s2 = 0;
+          for(let i=0;i<300;i++){ t.fx = {}; t.poise = 0; s2 += dealDamage(e,t,1,{}); }
+          return s2/300; };
+        if(!(mean("precise") > mean("kindled")*1.04)) missing.push("precise");
+      })();
+
+      (()=>{                                   /* relentless climbs, and it comes back down */
+        const a = att("relentless");
+        t.fx = {}; t.poise = 0;
+        const first = dealDamage(a, t, 1, {});
+        for(let i=0;i<10;i++){ t.fx={}; t.poise=0; dealDamage(a,t,1,{}); }
+        let s2 = 0; for(let i=0;i<40;i++){ t.fx={}; t.poise=0; s2 += dealDamage(a,t,1,{}); }
+        const climbed = (s2/40) > first && (a.relent||0) >= 6;
+        a.relentT = now() - 9000; traitTick(a);
+        if(!(climbed && !a.relent)) missing.push("relentless");
+      })();
+
+      (()=>{                                   /* untouchable: sometimes it is not there */
+        const u = att("untouchable");
+        let dodged = 0;
+        for(let i=0;i<800;i++) if(traitDodges(u)) dodged++;
+        if(!(dodged > 40 && dodged < 170 && traitIframe(u) > 1 && traitRollCd(u) < 1))
+          missing.push("untouchable("+dodged+")");
+      })();
+
+      (()=>{                                   /* warded closes up, but only if left alone */
+        const w = att("warded"); w.fx = {}; w.lastHurt = -1e9; traitTick(w);
+        const w2 = att("warded"); w2.fx = {}; w2.lastHurt = now(); traitTick(w2);
+        if(!(hasFx(w,"shield") && !hasFx(w2,"shield"))) missing.push("warded");
+      })();
+
+      o.traitWorks = missing;
+
+      /* and the first one of each you meet says what it is, once */
+      const hintsWere = S.hints;
+      S.hints = {};
+      const e1 = makeEnt(withTrait("kindled").id, 0, 0, "foe", {});
+      announceTrait(e1);
+      const said = !!S.hints["trait/kindled"];
+      const n0 = document.querySelectorAll("#feed > *").length;
+      announceTrait(makeEnt(withTrait("kindled").id, 0, 0, "foe", {}));
+      o.traitAnnounce = said && document.querySelectorAll("#feed > *").length === n0;
+      S.hints = hintsWere;
+
+      clear();
+      if(dummyWas === undefined) delete _trait["hand-assassin"];
+      else _trait["hand-assassin"] = dummyWas;
+      delete _act["hand-assassin"];
+      P.hp = P.maxHp; P.fx = {}; P.poise = 0; P.dead = false; G.lastCombat = -1e9;
+    })();
+
     // echoes: two bodies you have worn, called back to fight beside you
     (()=>{
       const P = G.player;
@@ -849,6 +991,12 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   ok("every sector's boss has a beat of its own",
      r.bossKitGaps.length===0 && r.bossKitCount===6, r.bossKitGaps.join(", "));
   ok("and all six of those beats land", r.bossKits.length===0, r.bossKits.join(" | "));
+  ok("every being has a trait, and all twelve are used",
+     r.traitBad.length===0 && r.traitAll, r.traitBad.join(", "));
+  ok("what the codex says about somebody decides it", r.traitFromTags && r.traitStable);
+  ok("and no one trait swallows the roster", r.traitSpread < 4, "widest/narrowest "+r.traitSpread.toFixed(1));
+  ok("all twelve traits do what they say", r.traitWorks.length===0, r.traitWorks.join(" | "));
+  ok("meeting one tells you what it is, once", r.traitAnnounce);
   ok("two echoes are held, and never the same body twice", r.echoSet && r.echoNoDouble);
   ok("holding one is a choice you make out of a fight", r.echoLocked);
   ok("calling one stands it up beside you", r.echoCall && r.echoOut && r.echoAgain);

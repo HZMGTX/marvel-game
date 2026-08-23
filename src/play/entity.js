@@ -18,7 +18,7 @@ function makeEnt(beingId, x, z, team, o){
   const pal = palette(b);
   return {
     uid: ++ENT_UID,
-    b, id:beingId, team, act:ACT[b.arch], pal, size,
+    b, id:beingId, team, act:actFor(b), pal, size,
     x, y:0, z, vx:0, vy:0, vz:0, yaw:Math.random()*6.283,
     rad:0.36*size, height:1.80*size*(palette(b).legs||1)*0.55 + 1.80*size*0.45, grounded:true,
     st:u.st, hp:u.maxHp, maxHp:u.maxHp, nrg:u.st.n, maxNrg:u.st.n,

@@ -42,10 +42,12 @@ function dealDamage(att, def, mul, o){
   if(!canHit(att, def)) return 0;
   if(def.team==="you" && hasFx(def,"iframe")) return 0;
   if(def === G.player && mindStopsHit(def, o)) return 0;
+  if(traitDodges(def)) return 0;
   const K = mitigationK(def);
-  const dEff = def.st.d * (1 - (o.pierce?0.4:0));
+  const dEff = def.st.d * (1 - (o.pierce?0.4:0)) * (hasTrait(att,"precise") ? 0.82 : 1);
   let dmg = att.st.p * mul * (K/(K+dEff))
           * (att.team==="foe" ? ENEMY_DMG_MULT*(att.boss?1.35:1) : att.team==="ally" ? ECHO_DMG : 1);
+  dmg *= traitOutgoing(att, def);
   if(hasFx(att,"charge")){ dmg *= 1.6; att.fx.charge = 0; }
   if(hasFx(att,"surge"))   dmg *= 1.6;
   if(hasFx(att,"weaken"))  dmg *= .70;
@@ -57,7 +59,7 @@ function dealDamage(att, def, mul, o){
   if(att === G.player && mindFx(att,"strike") && !G.struck){
     G.struck = true; dmg *= 1.45; mindFired("ORBITAL STRIKE");
   }
-  let crit = .05 + (att.st.s-def.st.s)/900 + (o.crit||0);
+  let crit = .05 + (att.st.s-def.st.s)/900 + (o.crit||0) + traitCrit(att);
   if(att.ai && att.ai.fx==="targeting") crit += .12;
   const isCrit = Math.random() < Math.max(.02, Math.min(.5, crit));
   if(isCrit) dmg *= (att.ai && att.ai.fx==="targeting") ? 1.85 : 1.6;
@@ -103,8 +105,8 @@ function dealDamage(att, def, mul, o){
   }
 
   /* poise: enough punishment in a short window and the stance breaks */
-  def.poise = (def.poise||0) + dmg;
-  if(now() - (def.poiseT||0) > 2600) def.poise = dmg;
+  const poiseHit = traitPoise(def, dmg, att);
+  def.poise = (now() - (def.poiseT||0) > 2600) ? poiseHit : (def.poise||0) + poiseHit;
   def.poiseT = now();
   if(!hasFx(def,"stun") && def.poise > def.maxHp*POISE_FRAC){
     def.poise = 0;
@@ -118,10 +120,10 @@ function dealDamage(att, def, mul, o){
   def.hp -= dmg;
   def.hitT = now(); def.lastHurt = now();
   if(att.team==="you" || def.team==="you") G.lastCombat = now();
-  if(def.team==="you") setFx(def,"iframe", HIT_IFRAME + vesselLevel("iframe")*70);
+  if(def.team==="you") setFx(def,"iframe", (HIT_IFRAME + vesselLevel("iframe")*70) * traitIframe(def));
   if(o.knock){
     const a = Math.atan2(def.x-att.x, def.z-att.z);
-    const k = o.knock*0.022;
+    const k = traitKnock(att, o.knock)*0.022;
     def.vx += Math.sin(a)*k; def.vz += Math.cos(a)*k;
     if(def.grounded) def.vy += k*0.34;
   }
@@ -143,6 +145,7 @@ function dealDamage(att, def, mul, o){
   spark(def.x, def.y + def.height*0.62, def.z, isCrit?14:7, att.team==="you"?SPARK_A:SPARK_B);
   if(att.team==="you"){ G.combo++; G.comboT = now()+2200; G.surge = Math.min(100, G.surge + dmg/def.maxHp*14); }
   else if(def === G.player) G.surge = Math.min(100, G.surge + dmg/def.maxHp*88*(1 + vesselLevel("surge")*0.18));
+  traitLanded(att, def, dmg, mul, o);
   if(def.hp<=0) killEnt(def);
   return dmg;
 }

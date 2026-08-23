@@ -28,6 +28,7 @@ function bodyTab(){
         <span style="min-width:0;flex:1">
           <span class="n">${esc(b.name)}</span><br>
           <span class="s">LV ${level(b.id)} · T${b.tier} ${esc(ARCH[b.arch].name)}${canFly(b)?" · FLIES":""}</span>
+          <br><span class="s" style="color:${TRAITS[traitOf(b)].hex}">${esc(traitName(b))}</span>
           ${g.length?`<br><span class="s" style="color:var(--gold)">${g.map(x=>esc(x.name)).join(", ")}</span>`:""}
         </span>
       </span>

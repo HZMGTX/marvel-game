@@ -93,6 +93,26 @@ function buildEffects(){
              0,0,0, 0.10,0.10,0.10, GOLD3, {kind:3, emis:1.0, alpha:0.9});
       }
     }
+    /* what is eating them — fire off the shoulders, rime around the feet */
+    if(hasFx(e,"burn") && !lod){
+      for(let i=0;i<3;i++){
+        const a = now()*0.005 + i*2.09;
+        draw(MESH_SPH_LO, e.x+Math.sin(a)*0.26*e.size,
+             e.y+(0.85+((now()*0.0016+i*0.33)%1)*0.95)*e.size,
+             e.z+Math.cos(a)*0.26*e.size, 0,0,0, 0.09,0.14,0.09, FIRE3,
+             {kind:3, emis:1.2, alpha:0.72});
+      }
+    }
+    if(hasFx(e,"chill")){
+      draw(MESH_TUBE, e.x, groundAt(e.x, e.z, e.rad)+0.04, e.z, 0,0,0,
+           1.5*e.size, 0.02, 1.5*e.size, ICE3, {kind:3, emis:0.7, alpha:0.30});
+      if(!lod) for(let i=0;i<3;i++){
+        const a = now()*-0.0022 + i*2.09;
+        draw(MESH_SPH_LO, e.x+Math.sin(a)*0.42*e.size, e.y+(0.5+i*0.42)*e.size,
+             e.z+Math.cos(a)*0.42*e.size, 0,0,0, 0.07,0.07,0.07, ICE3,
+             {kind:3, emis:1.0, alpha:0.7});
+      }
+    }
     if(e.fly && !lod){                 /* the air you are tearing through */
       const sp = Math.hypot(e.vx, e.vz, e.vy);
       if(sp > 14){
@@ -135,5 +155,6 @@ function buildEffects(){
   }
 }
 const GREEN3 = srgb("#5FE39A"), TELL3 = srgb("#FF5340");
+const FIRE3 = srgb("#FF8A4A"), ICE3 = srgb("#8FE8FF");
 
 /* ------------------------------------------------------------------ passes */

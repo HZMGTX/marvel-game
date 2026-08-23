@@ -19,6 +19,7 @@ const STATUS = {
   bleed:   {label:"BLEED",   tone:"bad",     desc:"Loses health each turn, worse when struck."},
   stun:    {label:"STUN",    tone:"bad",     desc:"Skips its turn."},
   weaken:  {label:"WEAKEN",  tone:"bad",     desc:"Deals 30% less damage."},
+  chill:   {label:"CHILLED", tone:"bad",     desc:"Moves at half speed and is slow to answer."},
   mark:    {label:"MARKED",  tone:"bad",     desc:"Takes 25% more damage."},
   silence: {label:"SILENCED",tone:"bad",     desc:"Cannot use its ultimate."},
   lock:    {label:"LOCKED",  tone:"bad",     desc:"Powers sealed — basic strikes only."},

@@ -56,7 +56,7 @@ function update(dt){
       eliteThink(e, dt);
       if(e.boss) bossKitTick(e, dt);
       /* something is coming for you — that counts as being in a fight */
-      if(p && !p.dead && e.engaged && distXZ(e,p) < 25) G.lastCombat = G.t;
+      if(p && !p.dead && e.engaged && distXZ(e,p) < 25){ G.lastCombat = G.t; announceTrait(e); }
     }
     else if(e.team==="ally"){ allyThink(e, dt); }
     else if(e.team==="civ"){ civThink(e, dt); }
@@ -176,10 +176,10 @@ function startRoll(e, mv){
   if(mv && (mv.x || mv.y)){ dx = mv.y*sy + mv.x*cy; dz = mv.y*cy - mv.x*sy; }
   else { dx = -Math.sin(e.yaw); dz = -Math.cos(e.yaw); }
   e.rollYaw = Math.atan2(dx, dz);
-  e.rollT = now() + 340; e.rollCd = now() + ROLL_CD;
+  e.rollT = now() + 340; e.rollCd = now() + ROLL_CD*traitRollCd(e);
   e.rollSpeed = 12.5;
   e.blocking = false;
-  setFx(e, "iframe", 300 + (e.team==="you" ? vesselLevel("iframe")*70 : 0));
+  setFx(e, "iframe", (300 + (e.team==="you" ? vesselLevel("iframe")*70 : 0)) * traitIframe(e));
   spark(e.x, e.y+0.4, e.z, 6, GUARD3);
 }
 function toggleLock(){

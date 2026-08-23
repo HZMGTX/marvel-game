@@ -30,6 +30,7 @@ function beingCard(b, extra){
     <span style="min-width:0">
       <span class="n">${esc(b.name)}</span><br>
       <span class="s">T${b.tier} ${esc(ARCH[b.arch].name)}${owned?" · LV "+level(b.id):""}${canFly(b)?" · FLIES":""}</span>
+      <br><span class="s" style="color:${TRAITS[traitOf(b)].hex}">${esc(traitName(b))}</span>
       ${extra||""}
     </span></button>`;
 }

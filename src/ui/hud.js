@@ -83,6 +83,7 @@ function updateHud(){
   const p = G.player; if(!p) return;
   el("self-name").textContent = p.b.name;
   el("self-sub").textContent = `LV ${level(p.id)} · ${ARCH[p.b.arch].name} · T${p.b.tier}`
+    + " · "+traitName(p.b).toUpperCase()
     + (p.gear ? " · "+(p.pot===1?"BOUND":"ECHO") : "") + (p.canFly?" · FLIES":"");
   el("bar-hp").style.width = Math.max(0,p.hp/p.maxHp*100)+"%";
   el("bar-nrg").style.width = Math.max(0,p.nrg/p.maxNrg*100)+"%";

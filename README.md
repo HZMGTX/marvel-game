@@ -33,6 +33,15 @@ carries everything you built into that body: its level, its mastery, its bound w
 goes for whatever is already hitting you, and it can pull something off you by getting in
 the way. Which two you hold is a choice you make out of a fight, like every other one.
 
+**Nobody fights like anybody else.** Six hundred and seventy-four beings used to share
+sixteen fighting kits, which meant that once you had played one Brawler you had played
+every Brawler. Each of them now carries a **trait** — one behaviour laid over the
+archetype. Where the codex says what somebody is, that decides it: a symbiote is
+**Venomous**, a demon is **Kindled**, anything cosmic is **Reaving**. Where it says
+nothing useful, the trait comes off the name, the same way the costume colours do, so it
+is stable and it is theirs. Enemies carry them too — a Hand assassin whose hits jump to
+whoever is standing behind you is not the Hand assassin you beat five minutes ago.
+
 **Artificial minds install into you, not into the body.** They follow you through every
 change. Most of them refuse to run on flesh — Ultron will not, J.A.R.V.I.S. wants
 circuitry, Cerebro only amplifies a mind that was already reaching.
@@ -217,13 +226,13 @@ because that is the rule browsers hold you to, and there is an on/off switch in 
 
 ## How the source is laid out
 
-`index.html` is a page shell: the HUD markup and a list of forty-eight source files in the
+`index.html` is a page shell: the HUD markup and a list of forty-nine source files in the
 order they load. Nothing is bundled, transpiled or minified — what you read is what runs,
 and you can open any one file and know what it holds from its first line.
 
 ```
 src/data/      the roster, the gear, the minds, and the code that builds them
-src/rules/     stats, abilities, progression, artificial minds, the save file
+src/rules/     stats, abilities, traits, progression, artificial minds, the save file
 src/gl/        matrix maths, the WebGL context, the shaders, the draw queue
 src/world/     the city plan, traffic, crowds, weather and the day
 src/body/      palette, skeleton, pose, and gear drawn onto a body
@@ -269,13 +278,13 @@ node test/regress.js
 ```
 
 `.github/workflows/checks.yml` does the same thing on a runner — syntax-check all
-48 source files, fold the bundle, drive both builds through the whole harness. It is
+49 source files, fold the bundle, drive both builds through the whole harness. It is
 set to **Run workflow** only: on push it failed in two seconds with no logs, which is
 what Actions does on a private repository when it cannot start a runner. Once Actions
 can run on the repo, put the `push` and `pull_request` triggers back and it works as
 written.
 
-It exits non-zero on any failure. Ninety-four checks, currently all passing — the last four
+It exits non-zero on any failure. Ninety-nine checks, currently all passing — the last four
 of them in a real 390×844 touch context, checking that the phone build comes up, that nothing
 on its HUD collides or runs off the edge, and that a quick tap fires an ability. Point it at a
 different build with `GAME_URL` — the bundle in `dist/` has to pass exactly the same set.
