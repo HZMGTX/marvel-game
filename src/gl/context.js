@@ -127,6 +127,10 @@ const MESH_BOX = (()=>{
   return makeMesh(p,n,idx);
 })();
 /* a smooth sphere, radius .5 */
+/* NOTE: this sphere has radius ONE, so a scale of s draws something 2s across
+   — unlike MESH_BOX and buildTube below, where a scale of s is s across. Every
+   sphere in the codebase is tuned against that, so it stays as it is; helpers
+   that take real-world sizes halve for it. */
 function buildSphere(lat, lon){
   const p=[],n=[],idx=[];
   for(let i=0;i<=lat;i++){

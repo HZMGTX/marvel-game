@@ -19,7 +19,7 @@ function drawCharFar(e){
   draw(MESH_BOX, e.x, y + 1.24*s, e.z, e.yaw, lean, e.bank||0,
        0.40*s*pal.bulk, 0.62*s, 0.235*s*pal.bulk, c1, M);
   draw(MESH_SPH_LO, e.x + sn*lean*0.32*s, y + 1.68*s - lean*0.10*s, e.z + c*lean*0.32*s,
-       0,0,0, 0.172*s, 0.225*s, 0.198*s, head, M);
+       0,0,0, 0.086*s, 0.113*s, 0.099*s, head, M);
   for(const side of [-1, 1]){
     const ox = side*0.11*s*pal.bulk;
     draw(MESH_BOX, e.x + ox*c, y + 0.46*s + (e.fly ? 0.30*s : 0), e.z - ox*sn,
@@ -193,26 +193,26 @@ function drawChar(e, camDist){
   const HS = pal.headSz || 1;
   /* the head was 20 cm across. A head is 15. Six hundred people were reading
      as action figures on that number alone. */
-  draw(MESH_SPH, headP[0],headP[1],headP[2], e.yaw, bodyPitch, bank,
-       0.163*s*HS, 0.232*s*HS, 0.192*s*HS, headCol, MH);
+  lump(headP[0],headP[1],headP[2], 0.157*s*HS, 0.225*s*HS, 0.190*s*HS,
+       e.yaw, bodyPitch, bank, headCol, MH);
   if(!far){                                     /* jaw, so a head is not an egg */
-    const jw = L2W(e, 0, (H.head+yb-0.052*HS)*s, 0.026*s, bodyPitch, [0,0,0]);
-    draw(MESH_SPH, jw[0],jw[1],jw[2], e.yaw, bodyPitch, bank,
-         0.143*s*HS, 0.115*s*HS, 0.168*s*HS, headCol, MH);
+    const jw = L2W(e, 0, (H.head+yb-0.050*HS)*s, 0.024*s, bodyPitch, [0,0,0]);
+    lump(jw[0],jw[1],jw[2], 0.138*s*HS, 0.112*s*HS, 0.163*s*HS,
+         e.yaw, bodyPitch, bank, headCol, MH);
   }
   if(!far){
     /* a visor, or eyes, or a hood */
-    const eye = L2W(e, 0, (H.head+yb+0.010)*s, 0.080*s, bodyPitch, [0,0,0]);
+    const eye = L2W(e, 0, (H.head+yb+0.008)*s, 0.072*s, bodyPitch, [0,0,0]);
     if(pal.masked || pal.machine)
       draw(MESH_BOX, eye[0],eye[1],eye[2], e.yaw, bodyPitch, bank, 0.126*s, 0.032*s, 0.036*s, c3,
            {rough:0.15, metal:0.6, emis: emis + (pal.machine||pal.glow ? 0.7 : 0.25)});
     else {
       for(const sd of [-1,1]){
-        const ep = L2W(e, sd*0.041*s, (H.head+yb+0.012)*s, 0.077*s, bodyPitch, [0,0,0]);
-        draw(MESH_SPH, ep[0],ep[1],ep[2], 0,0,0, 0.026*s,0.022*s,0.016*s, EYE3, {rough:0.1, metal:0});
+        const ep = L2W(e, sd*0.038*s, (H.head+yb+0.010)*s, 0.070*s, bodyPitch, [0,0,0]);
+        lump(ep[0],ep[1],ep[2], 0.026*s,0.022*s,0.016*s, 0,0,0, EYE3, {rough:0.1, metal:0});
       }
-      const hp = L2W(e, 0, (H.head+yb+0.050)*s, -0.010*s, bodyPitch, [0,0,0]);
-      draw(MESH_SPH, hp[0],hp[1],hp[2], e.yaw, bodyPitch, bank, 0.174*s, 0.156*s, 0.198*s, pal.hair, {rough:0.85, metal:0});
+      const hp = L2W(e, 0, (H.head+yb+0.042)*s, -0.009*s, bodyPitch, [0,0,0]);
+      lump(hp[0],hp[1],hp[2], 0.172*s, 0.150*s, 0.196*s, e.yaw, bodyPitch, bank, pal.hair, {rough:0.85, metal:0});
     }
     if(pal.horns) for(const sd of [-1,1]){
       const hb = L2W(e, sd*0.068*s, (H.head+yb+0.092)*s, -0.018*s, bodyPitch, [0,0,0]);

@@ -27,8 +27,12 @@ function bone(ax,ay,az, bx,by,bz, r, alb, mat, mesh, rz){
   draw(mesh||MESH_TAPER, (ax+bx)/2, (ay+by)/2, (az+bz)/2, ry, rx, 0,
        r*2, len, (rz===undefined?r:rz)*2, alb, mat);
 }
-function joint(x,y,z, r, alb, mat){ draw(MESH_SPH, x,y,z, 0,0,0, r*2,r*2,r*2, alb, mat); }
+/* MESH_SPH has radius one, so its scale is a radius while every other mesh
+   here takes a full size. Both of these take a real size in metres and halve
+   for it — which is what "joint(r)" used to get wrong by a factor of two, and
+   why heads came out the size of an action figure's. */
+function joint(x,y,z, r, alb, mat){ draw(MESH_SPH, x,y,z, 0,0,0, r,r,r, alb, mat); }
 /* a joint that is not a ball: shoulders, hips and skulls are none of them round */
 function lump(x,y,z, sx,sy,sz, yaw, pitch, roll, alb, mat){
-  draw(MESH_SPH, x,y,z, yaw||0, pitch||0, roll||0, sx,sy,sz, alb, mat);
+  draw(MESH_SPH, x,y,z, yaw||0, pitch||0, roll||0, sx*0.5, sy*0.5, sz*0.5, alb, mat);
 }

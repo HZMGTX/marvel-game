@@ -175,9 +175,9 @@ function drawProp(p, d){
     draw(MESH_BOX, p.x - Math.sin(p.r||0)*0.20*s, 0.72*s, p.z - Math.cos(p.r||0)*0.20*s,
          p.r||0, 0.22, 0, 1.75*s, 0.40*s, 0.07*s, WOOD3, {rough:0.88});
   } else if(p.k==="planter"){
-    draw(MESH_TAPER, p.x, 0.32*s, p.z, p.r||0, 0, 0, 1.05*s, 0.64*s, 1.05*s, STONE3, {rough:0.92});
-    if(d < 64) draw(MESH_TAPER, p.x, 1.5*s, p.z, 0,0,0, 0.16*s, 1.8*s, 0.16*s, BARK3, {rough:0.95});
-    draw(MESH_SPH, p.x, 2.7*s, p.z, p.r||0, 0, 0, 1.5*s, 1.3*s, 1.5*s, LEAF3, {rough:0.92});
+    draw(MESH_TAPER, p.x, 0.24*s, p.z, p.r||0, 0, 0, 0.74*s, 0.48*s, 0.74*s, STONE3, {rough:0.92});
+    if(d < 64) draw(MESH_TAPER, p.x, 1.10*s, p.z, 0,0,0, 0.085*s, 1.42*s, 0.085*s, BARK3, {rough:0.95});
+    draw(MESH_SPH, p.x, 1.92*s, p.z, p.r||0, 0, 0, 0.62*s, 0.52*s, 0.62*s, LEAF3, {rough:0.92});
   } else if(p.k==="sign"){
     draw(MESH_TUBE, p.x, 1.2*s, p.z, 0,0,0, 0.07*s, 2.4*s, 0.07*s, IRON3, MET);
     draw(MESH_BOX, p.x, 2.35*s, p.z, p.r||0, 0, 0, 0.62*s, 0.30*s, 0.04*s, c, {rough:0.4, metal:0.3});
@@ -208,7 +208,7 @@ function drawProp(p, d){
     }
   }
 }
-const BARK3=srgb("#3A2A1A"), LEAF3=srgb("#2E4A1E"), ROCK3=srgb("#3A3648"),
+const BARK3=srgb("#3A2E22"), LEAF3=srgb("#3B4A2C"), ROCK3=srgb("#3A3648"),
       STONE3=srgb("#7A6A48"), METAL3=srgb("#4A4A52");
 const LAMP3=srgb("#FFD49A");
 const IRON3=srgb("#2E3038"), HYD3=srgb("#8A2A22"), WOOD3=srgb("#4A3826"),
