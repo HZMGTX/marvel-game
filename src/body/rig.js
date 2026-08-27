@@ -16,12 +16,19 @@ function L2W(e, x, y, z, pitch, out){
 }
 const _a = [0,0,0], _b = [0,0,0];
 
-/* a limb between two world points */
-function bone(ax,ay,az, bx,by,bz, r, alb, mat, mesh){
+/* a limb between two world points. A torso is wider than it is deep and an
+   arm is not, so the two radii are separate — one number for both is what
+   made everybody look like a stack of drainpipes. */
+function bone(ax,ay,az, bx,by,bz, r, alb, mat, mesh, rz){
   const dx=bx-ax, dy=by-ay, dz=bz-az;
   const len = Math.hypot(dx,dy,dz) || 0.0001;
   const rx = Math.acos(Math.max(-1, Math.min(1, dy/len)));
   const ry = Math.atan2(dx, dz);
-  draw(mesh||MESH_TAPER, (ax+bx)/2, (ay+by)/2, (az+bz)/2, ry, rx, 0, r*2, len, r*2, alb, mat);
+  draw(mesh||MESH_TAPER, (ax+bx)/2, (ay+by)/2, (az+bz)/2, ry, rx, 0,
+       r*2, len, (rz===undefined?r:rz)*2, alb, mat);
 }
 function joint(x,y,z, r, alb, mat){ draw(MESH_SPH, x,y,z, 0,0,0, r*2,r*2,r*2, alb, mat); }
+/* a joint that is not a ball: shoulders, hips and skulls are none of them round */
+function lump(x,y,z, sx,sy,sz, yaw, pitch, roll, alb, mat){
+  draw(MESH_SPH, x,y,z, yaw||0, pitch||0, roll||0, sx,sy,sz, alb, mat);
+}

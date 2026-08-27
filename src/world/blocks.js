@@ -105,6 +105,17 @@ function buildWorld(sectorId){
     for(let i=0;i<2;i++) if(rng()<.8)
       props.push({x:ox-STREET*0.42+rng()*3-1.5, z:oz+rng()*bd, k:th.prop, s:0.8+rng()*0.6,
                   col:srgb(th.accent)});
+    /* A pavement with nothing on it but a lamp every forty metres reads as a
+       car park. These are the things a street actually has on it. */
+    if(th.prop === "lamp"){
+      const KIT = ["bollard","hydrant","bin","lights","bench","planter","sign","box"];
+      for(let i=0;i<3;i++){
+        if(rng() < 0.22) continue;
+        props.push({x: ox - STREET*0.42 + rng()*4.4 - 2.2, z: oz + rng()*bd,
+                    k: KIT[(rng()*KIT.length)|0], s: 0.85 + rng()*0.35,
+                    r: rng()*6.283, col: srgb(th.accent)});
+      }
+    }
   }
   for(let i=0;i<520;i++){
     const x = -WORLD/2+8 + rng()*(WORLD-16), z = -WORLD/2+8 + rng()*(WORLD-16);

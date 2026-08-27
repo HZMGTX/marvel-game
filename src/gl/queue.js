@@ -36,8 +36,9 @@ function draw(mesh, x,y,z, ry,rx,rz, sx,sy,sz, alb, mat){
     metal: mat.metal||0, emis: mat.emis||0,
     alpha: mat.alpha===undefined?1:mat.alpha,
     kind: mat.kind||0, accent: mat.accent||BLACK3,
-    shadow: mat.shadow!==false && (mat.alpha===undefined||mat.alpha>=1) && (mat.kind||0)!==3};
-  (item.alpha < 1 || item.kind===3 ? Q_ALPHA : Q_OPAQUE).push(item);
+    shadow: mat.shadow!==false && (mat.alpha===undefined||mat.alpha>=1)
+            && (mat.kind||0)!==3 && (mat.kind||0)!==6};
+  (item.alpha < 1 || item.kind===3 || item.kind===6 ? Q_ALPHA : Q_OPAQUE).push(item);
   return item;
 }
 const BLACK3 = [0,0,0];

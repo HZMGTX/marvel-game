@@ -11,18 +11,27 @@ float vnoise(vec2 p){
   return mix(mix(h21(i), h21(i+vec2(1,0)), u.x),
              mix(h21(i+vec2(0,1)), h21(i+vec2(1,1)), u.x), u.y);
 }
-float fbm(vec2 p){ return vnoise(p)*0.6 + vnoise(p*2.3)*0.26 + vnoise(p*5.1)*0.14; }
+float fbm(vec2 p){
+  float s = 0.0, a = 0.5;
+  for(int i = 0; i < 4; i++){
+    s += a * vnoise(p);
+    p = mat2(0.80, 0.60, -0.60, 0.80) * p * 2.07;   /* turn each octave off the grid */
+    a *= 0.5;
+  }
+  return s * 1.0667;
+}
 `;
 
 const VS_MAIN = `
 attribute vec3 aPos, aNor;
 uniform mat4 uProj, uView, uModel, uLightVP;
 uniform mat3 uNMat;
-varying vec3 vW, vN;
+varying vec3 vW, vN, vL;
 varying vec4 vLS;
 void main(){
   vec4 w = uModel * vec4(aPos, 1.0);
   vW = w.xyz;
+  vL = aPos;
   vN = uNMat * aNor;
   vLS = uLightVP * w;
   gl_Position = uProj * uView * w;
@@ -30,7 +39,7 @@ void main(){
 
 const FS_MAIN = `
 precision highp float;
-varying vec3 vW, vN;
+varying vec3 vW, vN, vL;
 varying vec4 vLS;
 uniform vec3 uAlb, uCam, uSunDir, uSunCol, uSkyCol, uGrdCol, uFogCol, uAccent;
 uniform float uRough, uMetal, uEmis, uAlpha, uFogD, uTonemap, uShadowOn, uTexel, uTime, uNight;
@@ -38,19 +47,33 @@ uniform int uKind;
 uniform sampler2D uShadow;
 ` + COMMON_NOISE + `
 float unpack(vec4 c){ return dot(c, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/16581375.0)); }
-float shadowAt(){
+/* A flat bias has to be set for the worst angle in the scene, which means it
+   is far too big everywhere else — that is what put a coarse dark check across
+   the road. Scale it by how obliquely the sun is landing and it can be small
+   where it matters. */
+float shadowAt(float ndl){
   if(uShadowOn < 0.5) return 1.0;
   vec3 p = vLS.xyz / vLS.w * 0.5 + 0.5;
-  if(p.x < 0.005 || p.x > 0.995 || p.y < 0.005 || p.y > 0.995 || p.z > 1.0) return 1.0;
-  float bias = 0.0022;
+  if(p.x < 0.004 || p.x > 0.996 || p.y < 0.004 || p.y > 0.996 || p.z > 1.0) return 1.0;
+  float bias = 0.00042 + 0.0030 * (1.0 - ndl);
+  vec2 pd[8];
+  pd[0] = vec2( 0.94, 0.06); pd[1] = vec2( 0.31, 0.86);
+  pd[2] = vec2(-0.62, 0.60); pd[3] = vec2(-0.90,-0.24);
+  pd[4] = vec2(-0.14,-0.83); pd[5] = vec2( 0.68,-0.58);
+  pd[6] = vec2( 0.36, 0.28); pd[7] = vec2(-0.33,-0.26);
+  float ang = h21(floor(gl_FragCoord.xy)) * 6.2831853;
+  float ca = cos(ang), sa = sin(ang);
+  mat2 rot = mat2(ca, sa, -sa, ca);
   float s = 0.0;
-  for(int y=-1; y<=1; y++){
-    for(int x=-1; x<=1; x++){
-      float d = unpack(texture2D(uShadow, p.xy + vec2(float(x), float(y))*uTexel));
-      s += (p.z - bias > d) ? 0.0 : 1.0;
-    }
+  for(int i = 0; i < 8; i++){
+    vec2 off = rot * pd[i] * uTexel * 2.4;
+    float d = unpack(texture2D(uShadow, p.xy + off));
+    s += (p.z - bias > d) ? 0.0 : 1.0;
   }
-  return s / 9.0;
+  s /= 8.0;
+  /* and fade it out at the edge of the map instead of ending in a hard line */
+  vec2 e = min(p.xy, 1.0 - p.xy);
+  return mix(1.0, s, smoothstep(0.0, 0.06, min(e.x, e.y)));
 }
 vec3 acesFilm(vec3 x){
   return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0);
@@ -67,17 +90,23 @@ void main(){
     vec2 f = fract((vW.xz + 190.0) / 76.0);
     vec2 q = min(f, 1.0 - f) * 76.0;
     float m = min(q.x, q.y);
-    float g = fbm(vW.xz * 0.9);
-    alb *= 0.86 + g*0.28;
+    float grain = fbm(vW.xz * 26.0);               /* the chippings themselves */
+    float wear  = fbm(vW.xz * 0.42);               /* patches, repairs, damp */
+    float g = grain*0.6 + wear*0.4;
+    alb *= 0.82 + 0.24*grain + 0.14*wear;
     float onRoad = 1.0 - smoothstep(9.5, 11.0, m);
-    alb = mix(alb*1.18, alb*0.74, onRoad);         /* pavement pale, tarmac dark */
+    alb = mix(alb*1.18, alb*0.72, onRoad);         /* pavement pale, tarmac dark */
+    /* paving slabs, but only on the pavement */
+    vec2 sl = abs(fract(vW.xz/1.9) - 0.5);
+    float joint = (1.0 - smoothstep(0.455, 0.495, max(sl.x, sl.y))) * (1.0 - onRoad);
+    alb *= 1.0 - joint*0.09;
     vec2 dash = abs(fract(vW.xz/7.0) - 0.5);
     float line = (1.0 - smoothstep(0.09, 0.20, m)) * step(0.30, dash.x + dash.y) * onRoad;
-    alb = mix(alb, vec3(0.30, 0.27, 0.15), line*0.5);
+    alb = mix(alb, vec3(0.34, 0.31, 0.17), line*0.6);
     float kerb = 1.0 - smoothstep(0.20, 0.55, abs(m - 10.2));
-    alb = mix(alb, alb*1.22, kerb*0.45);
-    rough = 0.94;
-    ao = 0.86 + 0.14*g;
+    alb = mix(alb, alb*1.24, kerb*0.5);
+    rough = 0.88 + 0.10*grain;
+    ao = 0.84 + 0.16*wear;
   }
   if(uKind == 2){                                   /* building facade */
     vec2 uv = (abs(N.x) > 0.5) ? vec2(vW.z, vW.y) : vec2(vW.x, vW.y);
@@ -97,6 +126,16 @@ void main(){
       /* ledges every few floors */
       float ledge = 1.0 - smoothstep(0.0, 0.06, abs(fract(uv.y/13.6) - 0.5));
       alb = mix(alb, alb*1.35, ledge*0.7);
+      /* the frame is set back from the glass, so its edge catches a shadow */
+      float recess = (1.0 - win) * (1.0 - smoothstep(0.0, 0.055,
+                      min(min(abs(f.x-0.16), abs(f.x-0.84)),
+                          min(abs(f.y-0.20), abs(f.y-0.78)))));
+      alb *= 1.0 - recess*0.45;
+      alb *= 0.90 + 0.16*fbm(uv*3.4) + 0.06*fbm(uv*17.0);   /* concrete, not paint */
+      /* streaking below every ledge, which is most of what makes concrete
+         look like it has stood outside */
+      float streak = smoothstep(0.5, 0.0, fract(uv.y/13.6)) * h21(vec2(floor(uv.x*0.7), 7.0));
+      alb *= 1.0 - streak*0.16;
       ao = 0.55 + 0.45 * smoothstep(0.0, 26.0, vW.y);
     } else {
       alb *= 0.7 + 0.3*fbm(vW.xz*1.4);
@@ -117,6 +156,13 @@ void main(){
     gl_FragColor = vec4(c, 1.0);
     return;
   }
+  if(uKind == 6){          /* a pool of light lying on the ground under a lamp */
+    float rr = clamp(1.0 - length(vL.xz), 0.0, 1.0);
+    vec3 c = alb * (1.0 + uEmis*2.0);
+    if(uTonemap > 0.5) c = pow(acesFilm(c), vec3(1.0/2.2));
+    gl_FragColor = vec4(c, rr*rr*uAlpha);
+    return;
+  }
   if(uKind == 3){                                   /* unlit — effects, glass */
     vec3 c = alb * (1.0 + uEmis*2.4);
     if(uTonemap > 0.5) c = pow(acesFilm(c), vec3(1.0/2.2));
@@ -124,15 +170,34 @@ void main(){
     return;
   }
 
-  float sh = shadowAt();
+  if(uKind == 0){
+    /* Cloth, skin and plate were one flat colour each, which is most of why
+       six hundred people read as painted plastic. A fine grain in the body's
+       own space — so it does not swim as they walk — breaks the colour up and
+       roughens the highlight along with it. */
+    float n = fbm(vL.xy * 34.0 + vL.z * 17.0);
+    float w = fbm(vL.xy * 7.0 - vL.z * 4.0);
+    alb *= 0.90 + 0.13*n + 0.07*w;
+    rough = clamp(rough + (n - 0.5)*0.22, 0.04, 1.0);
+    /* and the underside of everything sits in its own shade */
+    ao = 0.80 + 0.20 * (N.y*0.5 + 0.5);
+  }
+
   vec3 L = uSunDir;
   float ndl = max(dot(N, L), 0.0);
+  float sh = shadowAt(ndl);
   vec3 H = normalize(L + V);
   float spec = pow(max(dot(N, H), 0.0), mix(6.0, 190.0, 1.0 - rough));
   float fres = pow(1.0 - max(dot(N, V), 0.0), 4.0);
 
   vec3 amb = mix(uGrdCol, uSkyCol, N.y*0.5 + 0.5) * ao;
-  vec3 diffuse = alb * (amb + uSunCol * ndl * sh);
+  /* Skylight does not stop dead at the terminator, and a street bounces light
+     back into everything standing on it. Without either, anything with the sun
+     behind it is a flat silhouette — which is what every character was
+     whenever the sun happened to be on the far side of them. */
+  float wrap = (ndl + 0.34) / 1.34;
+  vec3 diffuse = alb * (amb + uSunCol * mix(ndl, wrap, 0.55) * sh);
+  diffuse += alb * uSkyCol * max(dot(N, V), 0.0) * 0.26 * ao;
   vec3 specCol = mix(vec3(0.055), alb, metal);
   float specK = (uKind == 1) ? 0.10 : 1.0;
   vec3 specular = specCol * spec * sh * uSunCol * (1.0 - rough*0.8) * 1.7 * specK;
@@ -202,16 +267,29 @@ uniform float uBloomAmt, uTime, uHurt, uVig;
 vec3 acesFilm(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }
 void main(){
   vec2 uv = vUV;
-  vec3 c = texture2D(uTex, uv).rgb;
+  float r = length(uv - 0.5);
+  /* a lens is not perfect: the corners split a little, which is small enough
+     that nobody sees it and large enough that everybody feels it */
+  vec2 ca = (uv - 0.5) * (r*r) * 0.0035;
+  vec3 c = vec3(texture2D(uTex, uv + ca).r,
+                texture2D(uTex, uv).g,
+                texture2D(uTex, uv - ca).b);
   c += texture2D(uBloom, uv).rgb * uBloomAmt;
   /* a red pull at the edges when the body you are wearing is hurting */
-  float r = length(uv - 0.5);
   c = mix(c, vec3(0.55, 0.04, 0.03), uHurt * smoothstep(0.18, 0.72, r));
-  c *= 1.0 - uVig * smoothstep(0.32, 0.92, r);
-  c = acesFilm(c * 0.94);
+  c *= 1.0 - uVig * smoothstep(0.26, 0.98, r);
+  c = acesFilm(c * 1.22);
   c = pow(c, vec3(1.0/2.2));
+  /* the picture came out of the tonemap flat and grey. An S-curve puts the
+     blacks back and holds the highlights; a little saturation stops the whole
+     thing reading as one wash. */
+  c = clamp((c - 0.5) * 1.16 + 0.5 + 0.008, 0.0, 1.0);
+  c = c*c*(3.0 - 2.0*c) * 0.30 + c * 0.70;
+  float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+  c = clamp(mix(vec3(l), c, 1.14), 0.0, 1.0);
+  /* grain lives in the shadows, the way film grain does */
   float g = fract(sin(dot(uv*vec2(1.0,1.3) + uTime*0.0007, vec2(127.1,311.7)))*43758.5453);
-  c += (g - 0.5) * 0.018;
+  c += (g - 0.5) * 0.030 * (1.0 - smoothstep(0.10, 0.75, l));
   gl_FragColor = vec4(c, 1.0);
 }`;
 
@@ -240,9 +318,12 @@ function makeTarget(w,h,filter){
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   return {fb, tex, rb, w, h};
 }
+/* 1024 texels over 140 metres is 14 cm a texel, and a 14 cm shadow texel is
+   the coarse dark check that used to lie across the road. The map is bigger
+   and the range is much smaller: 4 cm a texel, three times finer. */
 const QUALITY = {
-  high:   {shadow:1024, bloom:true,  scale:1.0,  shadowRange:70},
-  medium: {shadow:768,  bloom:true,  scale:0.85, shadowRange:60},
+  high:   {shadow:2048, bloom:true,  scale:1.0,  shadowRange:44},
+  medium: {shadow:1024, bloom:true,  scale:0.85, shadowRange:40},
   low:    {shadow:0,    bloom:false, scale:0.75, shadowRange:0}
 };
 let quality = "high";

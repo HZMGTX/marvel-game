@@ -576,14 +576,21 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
       })();
 
       (()=>{                                   /* relentless climbs, and it comes back down */
+        /* both ends averaged: one hit can crit, and a single sample against a
+           mean proves nothing either way */
         const a = att("relentless");
-        t.fx = {}; t.poise = 0;
-        const first = dealDamage(a, t, 1, {});
-        for(let i=0;i<10;i++){ t.fx={}; t.poise=0; dealDamage(a,t,1,{}); }
-        let s2 = 0; for(let i=0;i<40;i++){ t.fx={}; t.poise=0; s2 += dealDamage(a,t,1,{}); }
-        const climbed = (s2/40) > first && (a.relent||0) >= 6;
-        a.relentT = now() - 9000; traitTick(a);
-        if(!(climbed && !a.relent)) missing.push("relentless");
+        const hit = ()=>{ t.fx = {}; t.poise = 0; return dealDamage(a, t, 1, {}); };
+        let cold = 0;
+        for(let i=0;i<80;i++){ a.relent = 0; a.relentT = 0; cold += hit(); }
+        cold /= 80;
+        a.relent = 0; a.relentT = 0;
+        for(let i=0;i<10;i++) hit();                    /* wind it up to the cap */
+        let hot = 0;
+        for(let i=0;i<80;i++) hot += hit();
+        hot /= 80;
+        const climbed = hot > cold*1.15 && (a.relent||0) >= 6;
+        a.relentT = now() - 9000; traitTick(a);         /* and it lets go again */
+        if(!(climbed && !a.relent)) missing.push("relentless "+(hot/cold).toFixed(2));
       })();
 
       (()=>{                                   /* untouchable: sometimes it is not there */

@@ -17,6 +17,26 @@ function shiftHex(hex,dh,dl){
   return "#"+rgb.map(v=>Math.round((v+m)*255).toString(16).padStart(2,"0")).join("");
 }
 
+/* A hex out of the tables above is a poster colour: fully saturated, high
+   value, the way a logo is drawn. Cloth is never that. Real dye sits well
+   below full saturation and a fabric under daylight is darker than the swatch
+   it was picked from — and everybody being at 100% is most of why six hundred
+   people read as painted plastic. This pulls a hex back to something a dyer
+   could actually have made, with a little variation so a street is not one
+   tone. */
+function fabric(hex, sat, lift, jitter){
+  let r=parseInt(hex.slice(1,3),16)/255, g=parseInt(hex.slice(3,5),16)/255, b=parseInt(hex.slice(5,7),16)/255;
+  const mx=Math.max(r,g,b), mn=Math.min(r,g,b);
+  let h=0, sK=0; const l=(mx+mn)/2;
+  if(mx!==mn){ const d=mx-mn; sK = l>.5 ? d/(2-mx-mn) : d/(mx+mn);
+    h = mx===r ? (g-b)/d + (g<b?6:0) : mx===g ? (b-r)/d+2 : (r-g)/d+4; h*=60; }
+  sK = Math.max(0, Math.min(1, sK*(sat===undefined?0.66:sat)));
+  const L = Math.max(0.05, Math.min(0.88, l*(lift===undefined?0.80:lift) + (jitter||0)));
+  const c=(1-Math.abs(2*L-1))*sK, x=c*(1-Math.abs((h/60)%2-1)), m=L-c/2;
+  const rgb = h<60?[c,x,0]:h<120?[x,c,0]:h<180?[0,c,x]:h<240?[0,x,c]:h<300?[x,0,c]:[c,0,x];
+  return "#"+rgb.map(v=>Math.round(Math.max(0,Math.min(1,v+m))*255).toString(16).padStart(2,"0")).join("");
+}
+
 const HUES = {hero:"#2C6FE4",villain:"#B7231A",antihero:"#7B4BC9",cosmic:"#1E9AA8",mutant:"#C98A05",
   mystic:"#8E3AA8",ai:"#0E7C78",beast:"#7A5A22",tech:"#2E7D5B",entity:"#4A3E9E",object:"#5B6470",
   symbiote:"#232336",vehicle:"#3C5A78",civilian:"#6A6076",agent:"#3B4A63"};

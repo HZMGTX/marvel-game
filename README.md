@@ -249,14 +249,22 @@ back into `dist/multiverse-vessel.html`, still readable, still with no dependenc
 
 ## Under the hood
 
-- **Renderer**: hand-written WebGL. Sun with a real shadow map (packed depth, 3×3 PCF),
+- **Renderer**: hand-written WebGL. Sun with a real shadow map (packed depth, eight-tap
+  rotated Poisson),
   sky-and-ground hemisphere ambient, specular and fresnel rim, exponential height fog,
-  bloom, ACES filmic tonemap. Procedural asphalt, kerbs, road paint and building facades —
-  every lit window is a shader term, not a texture.
+  bloom, ACES filmic tonemap, then a grade: an S-curve to put the blacks back, a little
+  saturation, a lens that splits at the corners, a vignette, and grain that lives in the
+  shadows the way film grain does. Procedural asphalt, kerbs, road paint and building
+  facades — every lit window is a shader term, not a texture. After dark a street lamp
+  throws a real pool of light on the pavement under it.
 - **Characters**: forward kinematics over a real skeleton — hip/knee/ankle and
-  shoulder/elbow/wrist — with limbs as tapered tubes and joints as spheres. Costume
-  colours, capes, visors, horns and wings are derived from the character's name, so the
-  same being always looks the same and no two look quite alike.
+  shoulder/elbow/wrist. Limbs are wider than they are deep, because a chest 31 cm across
+  and 31 cm front-to-back is a barrel rather than a ribcage, and one radius for both is
+  what made everybody read as a snowman. Costume colours, capes, visors, horns and wings
+  are derived from the character's name, so the same being always looks the same and no
+  two look quite alike — and the colours are pulled back to something a dyer could
+  actually have made, because a hex straight out of a logo is a poster colour and cloth
+  is never that.
 - **Balance**: stats derive from tier and archetype and were tuned against a simulator.
   Same-tier archetype win rates sit in a 59–74% band; sector bosses are 33–68% at level 1
   and comfortably beatable with levels, bound gear and the right mind.
