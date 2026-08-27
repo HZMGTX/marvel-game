@@ -149,10 +149,10 @@ function drawProp(p, d){
     draw(MESH_TAPER2, p.x, 2.4*s, p.z, p.x,0.1,0.1, 0.9*s, 5.0*s, 0.9*s, c, {rough:0.12, metal:0.3, emis:0.25, alpha:0.85});
   } else if(p.k==="bollard"){
     draw(MESH_TUBE, p.x, 0.46*s, p.z, 0,0,0, 0.17*s, 0.92*s, 0.17*s, IRON3, {rough:0.55, metal:0.5});
-    draw(MESH_SPH, p.x, 0.94*s, p.z, 0,0,0, 0.17*s, 0.13*s, 0.17*s, IRON3, {rough:0.5, metal:0.5});
+    draw(MESH_SPH, p.x, 0.94*s, p.z, 0,0,0, 0.09*s, 0.07*s, 0.09*s, IRON3, {rough:0.5, metal:0.5});
   } else if(p.k==="hydrant"){
     draw(MESH_TUBE, p.x, 0.34*s, p.z, 0,0,0, 0.20*s, 0.68*s, 0.20*s, HYD3, {rough:0.6, metal:0.3});
-    draw(MESH_SPH, p.x, 0.70*s, p.z, 0,0,0, 0.22*s, 0.18*s, 0.22*s, HYD3, {rough:0.6, metal:0.3});
+    draw(MESH_SPH, p.x, 0.70*s, p.z, 0,0,0, 0.11*s, 0.09*s, 0.11*s, HYD3, {rough:0.6, metal:0.3});
     for(const sd of [-1,1])
       draw(MESH_TUBE, p.x + sd*0.16*s, 0.44*s, p.z, 0, 0, 1.5708, 0.08*s, 0.14*s, 0.08*s, HYD3,
            {rough:0.6, metal:0.3});
@@ -201,10 +201,10 @@ function drawProp(p, d){
          street after dark. This is the pool it should be throwing. */
       const gx = p.x + ax, gz = p.z + az, gy = groundAt(gx, gz, 0);
       draw(MESH_SPH, gx, gy + 0.03, gz, 0,0,0,
-           7.4*s, 0.02, 7.4*s, LAMP3, {kind:6, emis:0.35, alpha:0.15*night, shadow:false});
+           3.9*s, 0.02, 3.9*s, LAMP3, {kind:6, emis:0.35, alpha:0.17*night, shadow:false});
       if(d < 44)
         draw(MESH_SPH, gx, gy + 0.05, gz, 0,0,0,
-             3.4*s, 0.02, 3.4*s, LAMP3, {kind:6, emis:0.55, alpha:0.13*night, shadow:false});
+             1.8*s, 0.02, 1.8*s, LAMP3, {kind:6, emis:0.55, alpha:0.15*night, shadow:false});
     }
   }
 }

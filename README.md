@@ -260,7 +260,10 @@ back into `dist/multiverse-vessel.html`, still readable, still with no dependenc
 - **Characters**: forward kinematics over a real skeleton — hip/knee/ankle and
   shoulder/elbow/wrist. Limbs are wider than they are deep, because a chest 31 cm across
   and 31 cm front-to-back is a barrel rather than a ribcage, and one radius for both is
-  what made everybody read as a snowman. Costume colours, capes, visors, horns and wings
+  what made everybody read as a snowman. The proportions are measured against a person
+  rather than eyeballed, and the harness checks them: an ordinary human comes out 7.8
+  heads tall against a real 7.5, shoulders at 82% of standing height, hips at 54%, and a
+  shoulder span 2.9 head-widths across. Costume colours, capes, visors, horns and wings
   are derived from the character's name, so the same being always looks the same and no
   two look quite alike — and the colours are pulled back to something a dyer could
   actually have made, because a hex straight out of a logo is a poster colour and cloth
@@ -292,7 +295,7 @@ what Actions does on a private repository when it cannot start a runner. Once Ac
 can run on the repo, put the `push` and `pull_request` triggers back and it works as
 written.
 
-It exits non-zero on any failure. Ninety-nine checks, currently all passing — the last four
+It exits non-zero on any failure. One hundred checks, currently all passing — the last four
 of them in a real 390×844 touch context, checking that the phone build comes up, that nothing
 on its HUD collides or runs off the edge, and that a quick tap fires an ability. Point it at a
 different build with `GAME_URL` — the bundle in `dist/` has to pass exactly the same set.

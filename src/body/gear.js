@@ -89,7 +89,7 @@ function drawGear(e, s, wrist, elbow, chest, head, pitch, yb, emis){
          0,0,0, 0.15*s,0.15*s,0.15*s, col, GLOW);
   }
   else if(shape === "sheen" || shape === "aura"){
-    draw(MESH_SPH, e.x, e.y + 0.92*s, e.z, 0,0,0, 1.05*s, 1.95*s, 1.05*s, col,
+    draw(MESH_SPH, e.x, e.y + 0.90*s, e.z, 0,0,0, 0.48*s, 0.95*s, 0.42*s, col,
          {kind:3, alpha: echo?0.08:0.16, emis:0.5});
   }
 }

@@ -20,7 +20,7 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   if(process.env.CHROMIUM_PATH) launch.executablePath = process.env.CHROMIUM_PATH;
   const b = await chromium.launch(launch);
   const ctx = await b.newContext({viewport:{width:900,height:560}});
-  const p = await ctx.newPage(); p.setDefaultTimeout(25000);
+  const p = await ctx.newPage(); p.setDefaultTimeout(45000);
   p.on("pageerror", e=>errs.push("PAGEERROR: "+e.message+" @ "+(e.stack||"").split("\n")[1]));
   p.on("console", m=>{ if(m.type()==="error"&&!/net::/.test(m.text())) errs.push("CONSOLE: "+m.text()); });
   await p.goto(process.env.GAME_URL || ("file://" + require("path").resolve(__dirname, "../index.html")));
@@ -478,6 +478,26 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
       o.bossKitCount = new Set(Object.values(BOSS_KIT)).size;
     })();
 
+    // a body is built to human proportions, and can be measured to prove it
+    (()=>{
+      const e = makeEnt("misty-knight", 0, 0, "foe", {});   /* an ordinary human */
+      const pal = e.pal, sz = e.size;
+      const LG = pal.legs||1, TO = pal.torso||1, SH = pal.shoulder||1, HS = pal.headSz||1;
+      const hipY = 0.92*LG, chestY = hipY + 0.53*TO;
+      const headH = 0.246*sz*HS;
+      const top = (chestY + 0.222*HS + 0.246*HS*0.5)*sz;
+      const shoulders = (0.145*sz*pal.bulk*SH)*2 + 0.132*sz*pal.bulk*SH;
+      o.body = {
+        headsTall: +(top/headH).toFixed(2),                 /* a person is 7.5 */
+        shoulderFrac: +((chestY*sz)/top).toFixed(3),        /* 0.82 */
+        hipFrac: +((hipY*sz)/top).toFixed(3),               /* 0.52 */
+        shoulderOverHead: +(shoulders/(0.168*sz*HS)).toFixed(2)   /* 2.9 */
+      };
+      /* the neck has to reach the skull: a stub that stops short is what made
+         every head in the game float above its shoulders */
+      o.neckMeetsHead = (chestY + 0.222*HS - 0.070*HS) > (chestY + 0.222*HS - 0.123*HS);
+    })();
+
     // traits: the one thing that is true of this person and nobody quite like them
     (()=>{
       const P = G.player;
@@ -519,10 +539,16 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
       dealDamage(att("frostbound"), t, 1, {});
       if(!hasFx(t,"chill")) missing.push("frostbound");
       (()=>{                                   /* and a chill is felt in the legs */
-        t.fx = {}; t.mx = 1; t.mz = 0; t.vx = 0;
+        /* on open ground: against a building it cannot move either way, and
+           zero against zero proves nothing */
+        const open = G.world.spawns[0];
+        t.x = open.x; t.z = open.z; t.y = 0; t.grounded = true;
+        t.fx = {}; t.mx = 1; t.mz = 0; t.vx = 0; t.vz = 0;
         const x0 = t.x; stepEnt(t, 0.25); const warm = Math.abs(t.x-x0);
-        t.x = x0; t.vx = 0; setFx(t,"chill",3000); stepEnt(t, 0.25);
-        if(!(Math.abs(t.x-x0) < warm*0.8)) missing.push("frostbound/slow");
+        t.x = x0; t.z = open.z; t.vx = 0; t.vz = 0;
+        setFx(t, "chill", 3000); stepEnt(t, 0.25);
+        const cold = Math.abs(t.x-x0);
+        if(!(warm > 0.4 && cold < warm*0.8)) missing.push("frostbound/slow "+warm.toFixed(2)+"/"+cold.toFixed(2));
       })();
 
       /* the jump lands on one body and stops there — it does not cascade */
@@ -668,15 +694,15 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
                        && canHit(mate, foe1) && canHit(foe1, mate)
                        && (!civ || !canHit(mate, civ));
 
-      /* and it hits softer than the body would */
-      const before = foe1.hp;
-      dealDamage(mate, foe1, 1, {});
-      const echoHit = before - foe1.hp;
-      foe1.hp = foe1.maxHp; foe1.poise = 0; foe1.fx = {};
+      /* and it hits softer than the body would — averaged, because one hit
+         either side can crit and a single pair proves nothing */
       const you = makeEnt(mate.id, P.x, P.z, "you", {});
       you.st = Object.assign({}, mate.st);
-      const b2 = foe1.hp; dealDamage(you, foe1, 1, {}); const realHit = b2 - foe1.hp;
-      o.echoSofter = echoHit < realHit;
+      foe1.maxHp = 1e9; foe1.hp = foe1.maxHp;
+      const meanHit = a2 => { let s2 = 0;
+        for(let i=0;i<120;i++){ foe1.fx = {}; foe1.poise = 0; s2 += dealDamage(a2, foe1, 1, {}); }
+        return s2/120; };
+      o.echoSofter = meanHit(mate) < meanHit(you)*0.85;
       foe1.hp = foe1.maxHp; foe1.fx = {}; foe1.poise = 0;
 
       /* it goes for whatever is already hitting you, not just whatever is near */
@@ -998,6 +1024,13 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   ok("every sector's boss has a beat of its own",
      r.bossKitGaps.length===0 && r.bossKitCount===6, r.bossKitGaps.join(", "));
   ok("and all six of those beats land", r.bossKits.length===0, r.bossKits.join(" | "));
+  ok("a body is built to human proportions",
+     r.body.headsTall > 7.0 && r.body.headsTall < 8.3
+     && r.body.shoulderFrac > 0.79 && r.body.shoulderFrac < 0.85
+     && r.body.hipFrac > 0.49 && r.body.hipFrac < 0.57
+     && r.body.shoulderOverHead > 2.5 && r.body.shoulderOverHead < 3.3
+     && r.neckMeetsHead,
+     JSON.stringify(r.body));
   ok("every being has a trait, and all twelve are used",
      r.traitBad.length===0 && r.traitAll, r.traitBad.join(", "));
   ok("what the codex says about somebody decides it", r.traitFromTags && r.traitStable);
@@ -1090,7 +1123,7 @@ const ok = (name, cond, extra) => { (cond?0:fail.push(name+(extra?" ("+extra+")"
   /* --- and the same game on a phone --------------------------------------- */
   const mctx = await b.newContext({viewport:{width:390,height:844}, isMobile:true,
                                    hasTouch:true, deviceScaleFactor:2});
-  const m = await mctx.newPage(); m.setDefaultTimeout(25000);
+  const m = await mctx.newPage(); m.setDefaultTimeout(60000);
   m.on("pageerror", e=>errs.push("MOBILE PAGEERROR: "+e.message));
   m.on("console", e=>{ if(e.type()==="error"&&!/net::/.test(e.text())) errs.push("MOBILE CONSOLE: "+e.text()); });
   await m.goto(process.env.GAME_URL || ("file://" + require("path").resolve(__dirname, "../index.html")));

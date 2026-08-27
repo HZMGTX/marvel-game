@@ -93,13 +93,13 @@ function drawChar(e, camDist){
 
   /* the frame ----------------------------------------------------------- */
   const LG = pal.legs || 1, TO = pal.torso || 1, SH = pal.shoulder || 1;
-  const hipY = 0.92*LG, chestY = hipY + 0.48*TO;
+  const hipY = 0.92*LG, chestY = hipY + 0.53*TO;
   const H = {                                     /* joint heights, size 1 */
     ankle:0.09*LG, knee:0.50*LG, hip:hipY, waist:hipY + 0.13*TO,
-    chest:chestY, neck:chestY + 0.06, head:chestY + 0.255*(pal.headSz||1)
+    chest:chestY, neck:chestY + 0.072, head:chestY + 0.222*(pal.headSz||1)
   };
   if(plated) pal = Object.assign({}, pal, {bulk: pal.bulk*1.10});
-  const hipX = 0.088*s*pal.bulk, shX = 0.215*s*pal.bulk*SH;
+  const hipX = 0.088*s*pal.bulk, shX = 0.145*s*pal.bulk*SH;
   const yb = bob*s;
   /* A person is wider than they are deep. Every limb here used to be a
      cylinder of one radius, which is why everybody read as a snowman: a
@@ -112,24 +112,36 @@ function drawChar(e, camDist){
   const neck   = L2W(e, 0, (H.neck+yb)*s, 0, bodyPitch, [0,0,0]);
   const headP  = L2W(e, 0, (H.head+yb)*s, 0, bodyPitch, [0,0,0]);
 
-  /* torso: waist to chest, flaring outward, and flat front to back */
+  /* Torso: a waist that is narrower than both the ribcage above it and the
+     hips below it. One straight flare from pelvis to collar is a slab, and a
+     slab with a head on a post above it is what every body here looked like. */
   const torsoR = 0.150*s*pal.bulk;
-  bone(pelvis[0],pelvis[1],pelvis[2], chest[0],chest[1],chest[2],
-       torsoR, c1, {rough:M1.rough, metal:M1.metal, emis}, MESH_FLARE, torsoR*DEEP);
+  const waist  = L2W(e, 0, (H.waist+yb)*s, 0, bodyPitch, [0,0,0]);
+  bone(pelvis[0],pelvis[1],pelvis[2], waist[0],waist[1],waist[2],
+       torsoR*0.98, c1, {rough:M1.rough, metal:M1.metal, emis}, MESH_TAPER, torsoR*DEEP*0.98);
+  bone(waist[0],waist[1],waist[2], chest[0],chest[1],chest[2],
+       torsoR*0.88, c1, {rough:M1.rough, metal:M1.metal, emis}, MESH_FLARE, torsoR*DEEP*0.88);
   /* the ribcage, and the pelvis under it — neither of them a ball */
-  lump(chest[0],chest[1],chest[2], 0.375*s*pal.bulk*SH, 0.30*s*pal.bulk, 0.235*s*pal.bulk,
+  lump(chest[0],chest[1],chest[2], 0.322*s*pal.bulk*SH, 0.315*s*pal.bulk, 0.222*s*pal.bulk,
        e.yaw, bodyPitch, bank, c1, M1);
-  lump(pelvis[0],pelvis[1],pelvis[2], 0.295*s*pal.bulk, 0.215*s*pal.bulk, 0.215*s*pal.bulk,
+  lump(pelvis[0],pelvis[1],pelvis[2], 0.290*s*pal.bulk, 0.205*s*pal.bulk, 0.208*s*pal.bulk,
        e.yaw, bodyPitch, bank, c2, M1);
+  /* and the slope off the neck onto the shoulders, which is most of what a
+     pair of shoulders actually is */
+  if(!far){
+    const trap = L2W(e, 0, (H.chest+yb+0.075)*s, -0.012*s, bodyPitch, [0,0,0]);
+    lump(trap[0],trap[1],trap[2], 0.232*s*pal.bulk*SH, 0.128*s*pal.bulk, 0.180*s*pal.bulk,
+         e.yaw, bodyPitch, bank, c1, M1);
+  }
 
   if(!far){
     /* belt and chest mark */
     const belt = L2W(e, 0, (H.waist+yb)*s, 0, bodyPitch, [0,0,0]);
     draw(MESH_TUBE, belt[0],belt[1],belt[2], e.yaw, bodyPitch, bank,
-         0.315*s*pal.bulk, 0.052*s, 0.232*s*pal.bulk, c3, M2);
+         0.278*s*pal.bulk, 0.040*s, 0.196*s*pal.bulk, c3, M2);
     const em = L2W(e, 0, (1.24+yb)*s, 0.112*s, bodyPitch, [0,0,0]);
     draw(MESH_BOX, em[0],em[1],em[2], e.yaw, bodyPitch, bank,
-         0.145*s, 0.118*s, 0.026*s, c3, {rough:0.3, metal:0.5, emis:emis+(pal.glow?0.35:0.12)});
+         0.115*s, 0.094*s, 0.022*s, c3, {rough:0.3, metal:0.5, emis:emis+(pal.glow?0.35:0.12)});
   }
 
   /* legs */
@@ -172,7 +184,7 @@ function drawChar(e, camDist){
     const wrP = L2W(e, wx, wy, wz, bodyPitch, [0,0,0]);
     const AB = s*pal.bulk*(pal.limb||1);
     /* a deltoid caps the shoulder — it is not a bearing */
-    if(!far) lump(shP[0],shP[1],shP[2], 0.135*s*pal.bulk*SH, 0.125*s*pal.bulk, 0.120*s*pal.bulk,
+    if(!far) lump(shP[0],shP[1],shP[2], 0.132*s*pal.bulk*SH, 0.142*s*pal.bulk, 0.138*s*pal.bulk,
                   e.yaw, bodyPitch, bank, c1, M1);
     bone(shP[0],shP[1],shP[2], elP[0],elP[1],elP[2], 0.052*AB, c1, M1, null, 0.049*AB);
     if(!far) lump(elP[0],elP[1],elP[2], 0.085*AB, 0.082*AB, 0.082*AB, e.yaw,0,0, c1, M1);
@@ -189,11 +201,16 @@ function drawChar(e, camDist){
   if(e.gear && e.pot > 0 && !far) drawGear(e, s, rWrist, rElbow, chest, headP, bodyPitch, yb, emis);
 
   /* neck and head */
-  bone(chest[0],chest[1],chest[2], neck[0],neck[1],neck[2], 0.060*s, headCol, MH, MESH_TUBE, 0.054*s);
   const HS = pal.headSz || 1;
+  /* The neck was a seven-centimetre stub that stopped four centimetres short
+     of the head, so every head in the game floated. It runs from inside the
+     chest to inside the skull now, which cannot leave a gap. */
+  const nkA = L2W(e, 0, (H.chest + 0.045 + yb)*s, -0.006*s, bodyPitch, [0,0,0]);
+  const nkB = L2W(e, 0, (H.head - 0.070*HS + yb)*s, -0.006*s, bodyPitch, [0,0,0]);
+  bone(nkA[0],nkA[1],nkA[2], nkB[0],nkB[1],nkB[2], 0.064*s, headCol, MH, MESH_TUBE, 0.058*s);
   /* the head was 20 cm across. A head is 15. Six hundred people were reading
      as action figures on that number alone. */
-  lump(headP[0],headP[1],headP[2], 0.157*s*HS, 0.225*s*HS, 0.190*s*HS,
+  lump(headP[0],headP[1],headP[2], 0.168*s*HS, 0.246*s*HS, 0.202*s*HS,
        e.yaw, bodyPitch, bank, headCol, MH);
   if(!far){                                     /* jaw, so a head is not an egg */
     const jw = L2W(e, 0, (H.head+yb-0.050*HS)*s, 0.024*s, bodyPitch, [0,0,0]);

@@ -127,7 +127,7 @@ function buildEffects(){
     }
     if(!SHADOW){                       /* no shadow map — a blob keeps feet on the floor */
       const gy = groundAt(e.x, e.z, e.rad);
-      draw(MESH_SPH_LO, e.x, gy+0.04, e.z, 0,0,0, 1.2*e.size, 0.02, 1.2*e.size, BLACK3,
+      draw(MESH_SPH_LO, e.x, gy+0.04, e.z, 0,0,0, 0.58*e.size, 0.02, 0.58*e.size, BLACK3,
            {kind:3, alpha:0.34*Math.max(0.15, 1-(e.y-gy)/14), emis:0});
     }
     const surge = hasFx(e,"surge");
@@ -150,8 +150,9 @@ function buildEffects(){
            0,0,0, 0.13,0.13,0.13, surge?GOLD3:e.pal.c3, {kind:3, emis:1.1, alpha:surge?0.95:0.7});
     }
     if(hasFx(e,"shield")||hasFx(e,"fortify"))
-      draw(MESH_SPH, e.x, e.y+0.95*e.size, e.z, 0,0,0, 1.5*e.size, 2.0*e.size, 1.5*e.size,
-           GREEN3, {kind:3, alpha:0.13, emis:0.4});
+      /* radius-one mesh: these are halves. It used to be a four-metre egg. */
+      draw(MESH_SPH, e.x, e.y+0.92*e.size, e.z, 0,0,0, 0.62*e.size, 1.02*e.size, 0.62*e.size,
+           GREEN3, {kind:3, alpha:0.11, emis:0.35});
   }
 }
 const GREEN3 = srgb("#5FE39A"), TELL3 = srgb("#FF5340");

@@ -46,7 +46,7 @@ function palette(b){
     hooded: /mystic|demon/.test(tags) && p(21)>0.6,
     horns: /demon|deviant/.test(tags) || p(25)>0.975,
     winged: /^angel|archangel|^falcon|^vulture|^firelord|^stardust|^air-walker/i.test(b.name),
-    bulk: 0.92 + (b.arch==="TITAN"?0.30:0) + (b.arch==="SPEED"||b.arch==="ROGUE"?-0.06:0) + p(27)*0.12,
+    bulk: 0.92 + (b.arch==="TITAN"?0.19:0) + (b.arch==="SPEED"||b.arch==="ROGUE"?-0.06:0) + p(27)*0.12,
     /* proportions, so six hundred people are not one mannequin at six
        hundred sizes. All within a plausible human range. */
     legs:   1.0 + (p(31)-0.5)*0.16 + (b.arch==="SPEED"?0.07:0) + (b.arch==="TITAN"?-0.05:0),
