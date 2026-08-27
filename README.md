@@ -271,7 +271,13 @@ back into `dist/multiverse-vessel.html`, still readable, still with no dependenc
 - **Balance**: stats derive from tier and archetype and were tuned against a simulator.
   Same-tier archetype win rates sit in a 59–74% band; sector bosses are 33–68% at level 1
   and comfortably beatable with levels, bound gear and the right mind.
+- **Traffic and street**: cars have headlights that come on when the street lights do,
+  tail lights, and four wheels; a cape is a collar and four panels that widen and trail
+  towards the hem rather than a board bolted on behind somebody.
 - **Quality**: High / Medium / Low in the Rules tab. Low turns off shadows and bloom.
+  Medium is what a phone gets, and it is sized for one: a 768-texel shadow map over 76
+  metres, and a device pixel ratio capped at 1.6 — a phone at 3 was rendering nine times
+  the pixels anybody can see.
   Progress saves to your browser; there is a save code in the same tab.
 
 ## Checking it still works

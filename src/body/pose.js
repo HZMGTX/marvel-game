@@ -238,17 +238,29 @@ function drawChar(e, camDist){
     }
   }
 
-  /* cape */
+  /* Cape. Three flat slabs hung off the back is a plank, not cloth. Five
+     panels down the length and three across the width, each one following the
+     one above it, so the hem trails and the sides lift — and the whole thing
+     is anchored to the shoulders rather than floating behind them. */
   if(pal.cape && !far){
-    const flap = 0.16 + (e.moving?0.28:0) + (flying?0.50:0) + Math.sin(t*0.004)*0.06;
-    for(let i=0;i<3;i++){
-      const w = 0.20 - i*0.035;                  /* narrower, and tapering to a point */
-      const yTop = H.chest - i*0.28;
-      const zOff = -0.145 - i*0.09*flap*2.2;
+    const flap = 0.16 + (e.moving?0.30:0) + (flying?0.55:0) + Math.sin(t*0.004)*0.07;
+    const CM = {rough:0.90, metal:0.02, emis};
+    const seg = 4;
+    const capeW = 0.175*s*pal.bulk*SH;           /* half-width at the collar */
+    /* a collar across the shoulders, so it is attached to something */
+    const col0 = L2W(e, 0, (H.chest + 0.055 + yb)*s, -0.098*s, bodyPitch, [0,0,0]);
+    draw(MESH_BOX, col0[0], col0[1], col0[2], e.yaw, bodyPitch + 0.08, bank,
+         capeW*1.9, 0.095*s, 0.028*s, pal.capeCol, CM);
+    for(let i=0;i<seg;i++){
+      const f = i/(seg-1);                       /* 0 at the collar, 1 at the hem */
+      const sway = Math.sin(t*0.0030 + i*0.9)*0.045*(0.3 + f);
+      const yTop = H.chest - 0.06 - f*0.68;
+      const zOff = -0.105 - f*f*0.24*(0.5 + flap*1.6);
+      const w = capeW * (1.0 + f*0.26);          /* it widens a little to the hem */
       const a = L2W(e, 0, (yTop+yb)*s, zOff*s, bodyPitch, [0,0,0]);
-      draw(MESH_BOX, a[0], a[1] - 0.15*s, a[2],
-           e.yaw, bodyPitch + 0.26 + i*0.15*flap, bank,
-           w*2*s*pal.bulk, 0.34*s, 0.020*s, pal.capeCol, {rough:0.88, metal:0.02, emis});
+      draw(MESH_BOX, a[0], a[1], a[2],
+           e.yaw + sway, bodyPitch + 0.10 + f*(0.20 + flap*0.6), bank,
+           w*2, 0.265*s, 0.018*s, pal.capeCol, CM);
     }
   }
   /* wings, for the ones that have them */

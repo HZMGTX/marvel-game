@@ -323,7 +323,11 @@ function makeTarget(w,h,filter){
    and the range is much smaller: 4 cm a texel, three times finer. */
 const QUALITY = {
   high:   {shadow:2048, bloom:true,  scale:1.0,  shadowRange:44},
-  medium: {shadow:1024, bloom:true,  scale:0.85, shadowRange:40},
+  /* Medium is the phone default, and the phone is the reason it exists. 1024
+     over 80 metres was nearly twice the texels of the old 768 over 120, on top
+     of a scene that now draws half again as much. 768 over 76 is 9.9 cm a
+     texel — still a third of the 15.6 cm this started at, and it fits. */
+  medium: {shadow:768,  bloom:true,  scale:0.82, shadowRange:38},
   low:    {shadow:0,    bloom:false, scale:0.75, shadowRange:0}
 };
 let quality = "high";

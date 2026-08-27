@@ -11,7 +11,10 @@ const LVIEW = new Float32Array(16), LPROJ = new Float32Array(16), LVP = new Floa
 const EYE = [0,0,0];
 
 function resize(){
-  DPR = Math.min(quality==="low" ? 1.25 : 2, window.devicePixelRatio||1);
+  /* a phone at devicePixelRatio 3 was rendering nine times the pixels it
+     needs to; two is past the point anybody can tell */
+  DPR = Math.min(quality==="low" ? 1.25 : quality==="medium" ? 1.6 : 2,
+                 window.devicePixelRatio||1);
   VW = window.innerWidth; VH = window.innerHeight;
   CV.width = Math.floor(VW*DPR); CV.height = Math.floor(VH*DPR);
   CV.style.width = VW+"px"; CV.style.height = VH+"px";

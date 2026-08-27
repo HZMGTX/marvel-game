@@ -2,6 +2,9 @@
    the day turning over, and rain
    Part of Multiverse Vessel. Loaded in order from index.html. */
 
+/* headlights and tail lights, which only come on when the street does */
+const HEAD3 = srgb("#FFF3D6"), TAIL3 = srgb("#FF3A28");
+
 /* ------------------------------------------------------------- sky and rain */
 const DAY_LEN = 480000;                    /* eight minutes for a full turn */
 /* A sector's authored palette is its night. Daylight is that same palette
@@ -121,15 +124,30 @@ function buildCity(){
            [0.10,0.09,0.09], {rough:0.95, metal:0.2});
       continue;
     }
+    const d2 = Math.hypot(dx,dz);
     draw(MESH_BOX, c.x, 0.75, c.z, yaw,0,0, 2.0, 0.85, c.len, c.col, {rough:0.22, metal:0.75});
     draw(MESH_BOX, c.x, 1.42, c.z, yaw,0,0, 1.75, 0.62, c.len*0.52, [0.05,0.06,0.09],
          {rough:0.08, metal:0.4});
     const f = c.back ? -1 : 1;
-    draw(MESH_BOX, c.x + (c.axis?0:f*c.len*0.48), 0.72, c.z + (c.axis?f*c.len*0.48:0), yaw,0,0,
-         1.5, 0.26, 0.14, [1,0.92,0.7], {kind:3, emis:0.9, alpha:0.95});
-    for(const side of [-1,1]){
-      draw(MESH_TUBE, c.x + (c.axis? side*0.95 : 0), 0.34, c.z + (c.axis? 0 : side*0.95),
-           c.axis?0:Math.PI/2, Math.PI/2, 0, 0.66,2.0,0.66, [0.05,0.05,0.06], {rough:0.9});
+    const fx2 = c.axis ? 0 : f*c.len*0.48, fz2 = c.axis ? f*c.len*0.48 : 0;
+    /* Headlights used to burn at noon. They come on when the street lights do,
+       and there is something at the back of the car as well as the front. */
+    const nt = (G.world && G.world.night !== undefined) ? G.world.night : 0;
+    draw(MESH_BOX, c.x + fx2, 0.72, c.z + fz2, yaw,0,0, 1.5, 0.26, 0.14, HEAD3,
+         {kind:3, emis: 0.25 + nt*1.5, alpha: 0.55 + nt*0.42});
+    draw(MESH_BOX, c.x - fx2, 0.78, c.z - fz2, yaw,0,0, 1.45, 0.16, 0.12, TAIL3,
+         {kind:3, emis: 0.35 + nt*1.1, alpha: 0.5 + nt*0.45});
+    if(nt > 0.18 && d2 < 90){                       /* and they light the road */
+      const bx = c.x + fx2*2.6, bz = c.z + fz2*2.6;
+      draw(MESH_SPH_LO, bx, 0.05, bz, 0,0,0, 3.2, 0.02, 3.2, HEAD3,
+           {kind:6, emis:0.5, alpha:0.20*nt, shadow:false});
+    }
+    /* four wheels, not two barrels */
+    for(const side of [-1,1]) for(const end of [-1,1]){
+      const wx = c.x + (c.axis ? side*0.92 : end*c.len*0.31);
+      const wz = c.z + (c.axis ? end*c.len*0.31 : side*0.92);
+      draw(MESH_TUBE, wx, 0.32, wz, c.axis?0:Math.PI/2, Math.PI/2, 0,
+           0.64, 0.26, 0.64, [0.05,0.05,0.06], {rough:0.9});
     }
   }
   if(G.weather === "rain") for(const d of G.rain)
