@@ -255,8 +255,11 @@ back into `dist/multiverse-vessel.html`, still readable, still with no dependenc
   bloom, ACES filmic tonemap, then a grade: an S-curve to put the blacks back, a little
   saturation, a lens that splits at the corners, a vignette, and grain that lives in the
   shadows the way film grain does. Procedural asphalt, kerbs, road paint and building
-  facades — every lit window is a shader term, not a texture. After dark a street lamp
-  throws a real pool of light on the pavement under it.
+  facades — every lit window is a shader term, not a texture. The bottom five metres of a
+  building are shops rather than more of the same window grid: glass to the pavement in
+  wide bays, a fascia over the top, a door every few units, and light inside after dark in
+  the sector's own accent. After dark a street lamp throws a real pool of light on the
+  pavement under it.
 - **Characters**: forward kinematics over a real skeleton — hip/knee/ankle and
   shoulder/elbow/wrist. Limbs are wider than they are deep, because a chest 31 cm across
   and 31 cm front-to-back is a barrel rather than a ribcage, and one radius for both is

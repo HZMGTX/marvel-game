@@ -137,6 +137,38 @@ void main(){
       float streak = smoothstep(0.5, 0.0, fract(uv.y/13.6)) * h21(vec2(floor(uv.x*0.7), 7.0));
       alb *= 1.0 - streak*0.16;
       ao = 0.55 + 0.45 * smoothstep(0.0, 26.0, vW.y);
+
+      /* The ground floor is not the twentieth floor. Every building ran the
+         same grid of small windows from the pavement to the roof, which is
+         what a spreadsheet looks like, not a street. Down here it is shops:
+         glass to the pavement in wide bays, a fascia band over the top, a
+         door every few units, and light inside after dark — which is most of
+         what you are actually looking at while standing on the road. */
+      float g = 1.0 - smoothstep(4.4, 5.1, vW.y);
+      float unit = floor(uv.x / 4.2);
+      float bay  = fract(uv.x / 4.2);
+      float seed = h21(vec2(unit, floor(vW.x*0.03) + floor(vW.z*0.03)));
+      float pane = step(0.07, bay) * step(bay, 0.93)
+                 * step(0.55, vW.y) * step(vW.y, 3.10);
+      float door = step(0.38, bay) * step(bay, 0.62)
+                 * step(vW.y, 2.35) * step(0.66, seed);
+      float open = max(pane, door);
+      float fascia = step(3.20, vW.y);
+      /* Not every shop is open, and a lit window is a room seen through glass,
+         not a lamp. The first two attempts came out as blown white panels: the
+         interior colour was near-neutral, so the moment it was bright enough to
+         read as "lit" it read as white, and a pane this size carries far more
+         bloom than the small windows upstairs. It borrows the sector's own
+         accent now, the same warm the upper floors use. */
+      float shopLit = uNight * step(0.55, h21(vec2(unit, 7.0)));
+      vec3 inside = mix(vec3(0.05,0.055,0.075), uAccent*0.85, shopLit);
+      vec3 sa = mix(alb*0.80, inside, open);
+      sa = mix(sa, alb*0.52, fascia);                 /* the band over the window */
+      alb   = mix(alb, sa, g);
+      emis  = mix(emis, open*shopLit*0.30, g);
+      rough = mix(rough, mix(0.80, 0.09, open), g);
+      metal = mix(metal, mix(0.05, 0.45, open), g);
+      ao    = mix(ao, 0.72 + 0.28*open, g);
     } else {
       alb *= 0.7 + 0.3*fbm(vW.xz*1.4);
       rough = 0.9;
