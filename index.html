@@ -1,0 +1,112 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Multiverse Vessel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Chivo:wght@400;700;900&family=Chivo+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="src/style.css">
+</head><body data-touch="0">
+
+<canvas id="game"></canvas>
+<canvas id="ui"></canvas>
+
+<div id="hud" class="hide">
+  <div class="hud-zone" id="hud-self">
+    <div class="self">
+      <div class="face"><canvas id="face" width="88" height="88"></canvas></div>
+      <div class="self__body">
+        <div class="self__name" id="self-name">—</div>
+        <div class="self__sub" id="self-sub">—</div>
+        <div class="bar bar--hp bar--sm"><i id="bar-hp"></i></div>
+        <div class="bar bar--nrg bar--sm"><i id="bar-nrg"></i></div>
+        <div class="bar bar--surge bar--sm"><i id="bar-surge"></i></div>
+        <div class="self__mind" id="tag-mind" style="display:none">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hud-zone" id="hud-squad"></div>
+
+  <div class="hud-zone" id="hud-sector">
+    <button class="iconbtn" id="btn-menu" title="Menu">&#9776;</button>
+    <span class="tag" id="tag-sector">—</span>
+    <span class="tag tag--flare" id="tag-foes">—</span>
+    <span class="tag tag--gold" id="tag-essence">0</span>
+    <span class="tag tag--flare" id="tag-combat" style="display:none">IN COMBAT</span>
+    <span class="tag" id="tag-air" style="display:none">—</span>
+  </div>
+
+  <div id="minimap"><canvas id="mini" width="128" height="128"></canvas></div>
+
+  <div class="hud-zone" id="feed"></div>
+
+  <div class="hud-zone" id="stick"><div class="nub" id="nub"></div></div>
+
+  <div class="hud-zone" id="extra">
+    <button class="xbtn" id="btn-lock">Lock</button>
+    <button class="xbtn" id="btn-surge">Surge</button>
+    <button class="xbtn" id="btn-block">Guard</button>
+    <button class="xbtn" id="btn-dodge">Roll</button>
+    <button class="xbtn" id="btn-fly">Fly</button>
+    <button class="xbtn" id="btn-jump">Jump</button>
+  </div>
+
+  <div class="hud-zone" id="pad">
+    <button class="abtn abtn--util"  data-ab="util"><span class="cool"></span><span id="lab-util">Guard<small>C</small></span></button>
+    <button class="abtn abtn--ult"   data-ab="ult"><span class="cool"></span><span id="lab-ult">Ult<small>V</small></span></button>
+    <button class="abtn abtn--light" data-ab="light"><span class="cool"></span><span id="lab-light">Hit<small>Z</small></span></button>
+    <button class="abtn abtn--power" data-ab="power"><span class="cool"></span><span id="lab-power">Power<small>X</small></span></button>
+  </div>
+</div>
+
+<div id="screens"></div>
+
+<script src="src/data/core.js"></script>
+<script src="src/data/roster.js"></script>
+<script src="src/data/gear.js"></script>
+<script src="src/data/minds.js"></script>
+<script src="src/data/bosses.js"></script>
+<script src="src/data/build.js"></script>
+<script src="src/rules/abilities.js"></script>
+<script src="src/rules/traits.js"></script>
+<script src="src/gl/context.js"></script>
+<script src="src/gl/shaders.js"></script>
+<script src="src/world/blocks.js"></script>
+<script src="src/gl/queue.js"></script>
+<script src="src/rules/state.js"></script>
+<script src="src/rules/minds.js"></script>
+<script src="src/audio/sound.js"></script>
+<script src="src/rules/progress.js"></script>
+<script src="src/play/entity.js"></script>
+<script src="src/body/palette.js"></script>
+<script src="src/body/rig.js"></script>
+<script src="src/body/pose.js"></script>
+<script src="src/body/gear.js"></script>
+<script src="src/fight/damage.js"></script>
+<script src="src/fight/effects.js"></script>
+<script src="src/fight/air.js"></script>
+<script src="src/fight/abilities.js"></script>
+<script src="src/play/state.js"></script>
+<script src="src/play/enemy.js"></script>
+<script src="src/play/elites.js"></script>
+<script src="src/play/bosskits.js"></script>
+<script src="src/play/allies.js"></script>
+<script src="src/play/step.js"></script>
+<script src="src/play/tick.js"></script>
+<script src="src/play/missions.js"></script>
+<script src="src/play/story.js"></script>
+<script src="src/world/traffic.js"></script>
+<script src="src/world/weather.js"></script>
+<script src="src/render/frame.js"></script>
+<script src="src/render/effects.js"></script>
+<script src="src/render/passes.js"></script>
+<script src="src/render/overlay.js"></script>
+<script src="src/ui/controls.js"></script>
+<script src="src/ui/hud.js"></script>
+<script src="src/ui/screens.js"></script>
+<script src="src/ui/title.js"></script>
+<script src="src/ui/tabs-you.js"></script>
+<script src="src/ui/tabs-kit.js"></script>
+<script src="src/ui/tabs-lore.js"></script>
+<script src="src/ui/actions.js"></script>
+<script src="src/ui/boot.js"></script>
+</body></html>

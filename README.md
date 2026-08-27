@@ -1,0 +1,317 @@
+# Multiverse Vessel
+
+A 3D action game that runs in a browser. You are a spark with no body of your own. You can
+hold on to a person, and while you do, everything they can do is something you can do.
+
+**674 beings. 104 pieces of gear. 30 artificial minds. 30 sectors.** No libraries, no art
+files, no audio files — every character, every building, every effect and every sound is
+generated from code at runtime.
+
+Open `index.html` in a browser. That's the whole install. The title screen is not a picture
+— it is one of the four cities, running, with traffic on the roads and the hour of the day
+turning over, and the camera drifting around the skyline while you decide who to be.
+
+## The rules that make it a game
+
+**Beat somebody, become somebody.** Everything you put down joins the list of bodies you
+can wear — from a Hell's Kitchen enforcer to the One Above All.
+
+**You choose your body whenever you like — but never mid-fight.** Out of a fight, open the
+menu and become anyone you have beaten; health comes back full. The moment you trade blows,
+or something living starts hunting you, the choice locks for six seconds after the last
+hit. Break away first.
+
+**Gear belongs to a person.** Armour, hammers, symbiotes, cloaks — each is bound to its
+owner. To use a suit properly you have to *be* the person it was built for; in anyone
+else's hands it sits inert. Ten kills as its rightful owner attunes a piece to the vessel,
+and after that any body can echo it at 55%, which is never the same thing.
+
+**Two of the bodies you have worn come back.** The spark cannot be in two at once — that
+rule never bends — but it remembers every one it has been in, and an echo is that memory
+stood up in the street beside you. Forty seconds, a little over half strength, and it
+carries everything you built into that body: its level, its mastery, its bound weapon. It
+goes for whatever is already hitting you, and it can pull something off you by getting in
+the way. Which two you hold is a choice you make out of a fight, like every other one.
+
+**Nobody fights like anybody else.** Six hundred and seventy-four beings used to share
+sixteen fighting kits, which meant that once you had played one Brawler you had played
+every Brawler. Each of them now carries a **trait** — one behaviour laid over the
+archetype. Where the codex says what somebody is, that decides it: a symbiote is
+**Venomous**, a demon is **Kindled**, anything cosmic is **Reaving**. Where it says
+nothing useful, the trait comes off the name, the same way the costume colours do, so it
+is stable and it is theirs. Enemies carry them too — a Hand assassin whose hits jump to
+whoever is standing behind you is not the Hand assassin you beat five minutes ago.
+
+**Artificial minds install into you, not into the body.** They follow you through every
+change. Most of them refuse to run on flesh — Ultron will not, J.A.R.V.I.S. wants
+circuitry, Cerebro only amplifies a mind that was already reaching.
+
+**Eight locals draws the boss out.** Put the boss down and the sector is clear, the next
+opens, a mind comes free, and you get a line of the story back.
+
+**There is always work.** Every sector generates three jobs out of its own roster — hunt a
+named target, hold a marker for thirty seconds while they keep coming, get civilians clear,
+recover a piece of gear from whoever is standing over it, or run down someone who is
+already running. Finish three and new work comes in.
+
+## Controls
+
+| | Keyboard | Touch |
+|---|---|---|
+| Move | `W A S D` / arrows | stick — touch anywhere on the left half |
+| Look | drag, or click to lock the mouse | drag on the right half |
+| Strike | `Z` | the four round buttons |
+| Power | `X` | |
+| Guard or heal | `C` | |
+| Ultimate | `V` | |
+| Jump | `Space` | JUMP |
+| Fly | hold `Shift` | FLY |
+| Climb / dive | `Space` / `Ctrl` while flying | JUMP / DOWN |
+| Surge | `Q` | SURGE |
+| Guard / parry | hold `F` or right mouse | GUARD |
+| Roll | `Shift` (if you can't fly) | ROLL |
+| Lock on | `T` | LOCK |
+| Change body | `B` | BECOME |
+| Call an echo | `1` / `2` | the two faces beside BECOME |
+| Menu | `Esc` | ☰ |
+
+Scroll to pull the camera in or out. Jump onto the rooftops — they are solid.
+
+## Flying
+
+Flight carries momentum. Let go of the stick and you coast instead of stopping dead, and
+you lean into your turns. Hold `Ctrl` and you stop flying level and start **diving** —
+head down, arms in, up to about 120 km/h. Level out at the bottom and the drop you just
+spent comes back as forward speed for the next few seconds; the readout in the corner says
+`SWOOP` while you still have it.
+
+What goes up lands. Come down hard enough — off a dive, or off a roof — and you land in a
+crouch on a shockwave that knocks over anyone standing near, wrecks parked cars and flattens
+the street furniture. The harder the fall, the wider it lands, and past a certain speed it
+staggers what it hits. A step off a kerb does none of that. Dive *into* somebody rather than
+into the road and they take the same weight in the chest.
+
+**Height is an advantage, not a hiding place.** Everyone shoots at where you actually are
+rather than dead ahead. A grounded enemy within jumping distance will come up after you; one
+too far or too high will pick something up and throw it. And your third strike in a chain
+launches whoever it hits into the air — bosses excepted — so you can follow them up.
+
+## Fighting
+
+Three light strikes chain and the third lands at 1.6× with real knockback. Guarding stops
+most of what you are facing and drains energy — run it dry and your guard breaks. A hit
+that arrives in the first quarter-second of a guard is a **parry**: no damage, the attacker
+staggers, and a quarter of it goes back. Enemies wind up for about half a second before
+anything heavy, with a flare around their feet — that is your cue to block, parry or roll.
+Enough punishment in a few seconds breaks a stance outright, and hits on a broken stance
+land 40% harder.
+
+## Spending what you gather
+
+Essence buys four things, and none of it can be done mid-fight:
+
+- **The vessel** — a deeper surge, faster out-of-combat recovery, more essence per kill,
+  longer invulnerability on rolls, and a longer memory so your echoes stand longer and come
+  back sooner. These carry across every body you wear.
+- **Abilities** — each of a body's four moves can be worked up three ranks: +9% damage and
+  6% faster recovery per rank.
+- **Gear** — three ranks per piece, and each rank also lowers how many kills it takes to
+  attune.
+- **Mastery** costs nothing but use: every kill while wearing a body counts, and 25 / 75 /
+  150 each add +4% to everything they are.
+
+## The city
+
+Every sector builds its own ground. Four terrains — city blocks and straight streets,
+crowded uneven towers, low wide halls with open ground between them, and open ground with a
+few masses on it — so Sanctum Sanctorum does not look like Hell's Kitchen in a different
+colour. A 608-metre grid with traffic running the roads, people on the
+pavement who scatter when a fight starts, street lamps and cars you can wreck, and
+buildings that stand on pillars so you can walk in under them. The sun goes round on an
+eight-minute cycle — dawn, noon, dusk, night with the windows lit — and it rains about
+a third of the time.
+
+## Who is waiting at the end of each one
+
+Each of them also has one beat that is its own, announced and answerable, so that Doom is not
+Dormammu with a different palette. Kingpin, Juggernaut, Killmonger, Surtur and Fin Fang Foom
+**put it through the floor** — a wave you have to not be standing on. Odin, Galactus, Arishem,
+the Supreme Intelligence and the Living Tribunal **line something up** and sweep it across the
+arena. Ultron, Onslaught, Annihilus and the Super-Skrull are **not there alone**. Doom, Black
+Bolt, Mephisto and God Emperor Doom **close** behind a shield you have to break. Dormammu,
+Belasco, Kang, the Collector and He Who Remains **step out of the room** and come back behind
+you. Green Goblin, Dark Phoenix, Hela, Thanos, Knull and the Grandmaster **pull**.
+
+Each sector has a named antagonist rather than whoever happens to have the highest number:
+Kingpin runs Hell's Kitchen, the Green Goblin is over Queens, Ultron is the one waiting in
+Manhattan, Killmonger in Wakanda, Thanos on Titan, He Who Remains in the TVA, Knull in the
+Bleed and the Living Tribunal above all others. A named boss who is not the strongest thing
+in their own sector — Kingpin is not — gets scaled up to meet the job.
+
+## What it costs
+
+The spark does not know what it is. Every one of the thirty sectors has a line about what
+wearing people is doing to the people, given to you when you clear it, and the ten that
+matter most have a boss who says something when they come out — Doom addresses the spark
+rather than the mouth; the TVA would like to know why your file is one line long.
+
+It keeps count. How many bodies you have taken, and how many you wore out. Clear **Above All
+Others**, the last sector, and instead of another "sector clear" screen you get the argument:
+the tally, and a choice. **Let go** — the spark goes out, somebody wakes up on the floor
+missing an afternoon, and that is the end of it. **Hold on** — you keep everything you have
+and the thirty go back the way you found them. There is always another one, and none of them
+can tell.
+
+## The mind you are carrying
+
+An artificial mind installs into the vessel, not the body, so it follows you through every
+change — but most of them refuse to run on flesh. Ultron will not. J.A.R.V.I.S. wants
+circuitry. Cerebro only amplifies a mind that was already reaching.
+
+All twelve effects do something you can see, and the readout under your health bars says
+which one you are carrying and lights up the moment it steps in.
+
+| | What it does for you |
+|---|---|
+| **Targeting Solution** | +12% critical chance, and your criticals hit harder |
+| **Combat Assist** | Once per fight, cancels a hit that would drop you below a quarter health |
+| **Orbital Strike** | The first blow you land in each fight hits 45% harder |
+| **Encouragement** | Energy comes back much faster while you are below half health |
+| **Drop Plating** | A shield goes up by itself the moment a fight starts |
+| **Adaptive Learning** | The longer a fight runs the less it hurts — 2% a second, to a quarter off |
+| **Density Control** | A quarter of everything aimed at you passes straight through |
+| **Backup Consciousness** | Once per sector, puts you back on your feet at 30% when the host falls |
+| **Precognition** | You slip one hit in seven, and afflictions land 30% less often |
+| **Combat Simulation** | +10% damage against anyone you have already beaten once |
+| **Field Repair** | Steadily puts health back while you are still standing |
+| **Force Allocation** | +30% energy regeneration |
+
+## The ones who are not like the others
+
+Roughly one wanderer in seven carries a **role** — more the deeper you go, up to about two
+in five. A role keeps the person's own name, stats and abilities and adds one behaviour on
+top, announced above their head before they reach you, with a coloured ring under their feet.
+
+| | What it does | What beats it |
+|---|---|---|
+| **WARDEN** | Hardens everything standing near it, every seven seconds | Break the warden first |
+| **STALKER** | Goes half-invisible and walks round to your back; strikes at 1.7× | Turn around |
+| **BREAKER** | Plants its feet, warns for a full second, then lands something no guard stops | Roll it |
+| **MARKSMAN** | Will not let you close — dashes back the moment you get inside nine metres | Cover, or get there fast |
+| **LEECH** | Half of every hit it lands goes back into its own health | Do not trade with it |
+| **HERALD** | Calls two more in the moment it drops below 60% | Finish it before then |
+
+They cost you more and they are worth more — up to 2.2× the essence. The first time you
+meet each role, the feed tells you what it is and what to do about it, once.
+
+## The hour of the day
+
+The clock turns over every eight minutes, and it is a real cycle, not a tint. At noon the
+sky is a sky, the office windows are dark, the haze thins out and the sun rakes across the
+street from one side — it never stands directly overhead, because a light with no direction
+flattens a city. Towards evening the shadows lengthen, the windows come on one by one and
+the street starts lighting itself. After dark a moon takes the sun's place from the other
+side, so night still has a direction, a shape and a shadow behind you.
+
+Each sector's palette is written as its *night*; daylight is that same palette lifted to a
+daylight level and pulled part of the way towards a plain daytime tint, so a place keeps its
+character without keeping its dye. Rain thickens the air, dims the sun and wets the asphalt.
+
+## Sound
+
+Sixteen sounds, all synthesised at the moment they play — impacts, a bright chime for a
+parry, whooshes, beams, explosions, footsteps, a low city drone and rain that fades with
+the weather. There are no audio files in this repository. It starts on your first tap,
+because that is the rule browsers hold you to, and there is an on/off switch in Rules.
+
+## How the source is laid out
+
+`index.html` is a page shell: the HUD markup and a list of forty-nine source files in the
+order they load. Nothing is bundled, transpiled or minified — what you read is what runs,
+and you can open any one file and know what it holds from its first line.
+
+```
+src/data/      the roster, the gear, the minds, and the code that builds them
+src/rules/     stats, abilities, traits, progression, artificial minds, the save file
+src/gl/        matrix maths, the WebGL context, the shaders, the draw queue
+src/world/     the city plan, traffic, crowds, weather and the day
+src/body/      palette, skeleton, pose, and gear drawn onto a body
+src/fight/     damage, guards, parries, effects, the air, and what the four slots do
+src/play/      entities, enemy minds, elite roles, boss beats, echoes, the step, the frame, missions, story
+src/render/    the camera, the passes, the effects, the flat overlay
+src/audio/     every sound, synthesised
+src/ui/        controls, HUD, screens, and what their buttons do
+```
+
+If you would rather have one file — to email it, to drop it on a USB stick, to put it
+somewhere that only takes a single upload — `node tools/bundle.js` folds the whole thing
+back into `dist/multiverse-vessel.html`, still readable, still with no dependencies.
+
+## Under the hood
+
+- **Renderer**: hand-written WebGL. Sun with a real shadow map (packed depth, eight-tap
+  rotated Poisson),
+  sky-and-ground hemisphere ambient, specular and fresnel rim, exponential height fog,
+  bloom, ACES filmic tonemap, then a grade: an S-curve to put the blacks back, a little
+  saturation, a lens that splits at the corners, a vignette, and grain that lives in the
+  shadows the way film grain does. Procedural asphalt, kerbs, road paint and building
+  facades — every lit window is a shader term, not a texture. The bottom five metres of a
+  building are shops rather than more of the same window grid: glass to the pavement in
+  wide bays, a fascia over the top, a door every few units, and light inside after dark in
+  the sector's own accent. After dark a street lamp throws a real pool of light on the
+  pavement under it.
+- **Characters**: forward kinematics over a real skeleton — hip/knee/ankle and
+  shoulder/elbow/wrist. Limbs are wider than they are deep, because a chest 31 cm across
+  and 31 cm front-to-back is a barrel rather than a ribcage, and one radius for both is
+  what made everybody read as a snowman. The proportions are measured against a person
+  rather than eyeballed, and the harness checks them: an ordinary human comes out 7.8
+  heads tall against a real 7.5, shoulders at 82% of standing height, hips at 54%, and a
+  shoulder span 2.9 head-widths across. Costume colours, capes, visors, horns and wings
+  are derived from the character's name, so the same being always looks the same and no
+  two look quite alike — and the colours are pulled back to something a dyer could
+  actually have made, because a hex straight out of a logo is a poster colour and cloth
+  is never that.
+- **Balance**: stats derive from tier and archetype and were tuned against a simulator.
+  Same-tier archetype win rates sit in a 59–74% band; sector bosses are 33–68% at level 1
+  and comfortably beatable with levels, bound gear and the right mind.
+- **Traffic and street**: cars have headlights that come on when the street lights do,
+  tail lights, and four wheels; a cape is a collar and four panels that widen and trail
+  towards the hem rather than a board bolted on behind somebody.
+- **Quality**: High / Medium / Low in the Rules tab. Low turns off shadows and bloom.
+  Medium is what a phone gets, and it is sized for one: a 768-texel shadow map over 76
+  metres, and a device pixel ratio capped at 1.6 — a phone at 3 was rendering nine times
+  the pixels anybody can see.
+  Progress saves to your browser; there is a save code in the same tab.
+
+## Checking it still works
+
+`test/regress.js` drives the real game in a real browser and asserts from page state, not
+from screenshots — that the world comes up, that every one of the 674 beings builds, that a body cannot
+be changed mid-fight, that guarding, parrying and rolling do what they claim, that gear
+stays bound to its owner, that missions start and abandon, that ranks buy, that bosses
+turn, that the city stays populated, and that the save round-trips.
+
+```
+npm ci
+npx playwright install chromium
+node test/regress.js
+```
+
+`.github/workflows/checks.yml` does the same thing on a runner — syntax-check all
+49 source files, fold the bundle, drive both builds through the whole harness. It is
+set to **Run workflow** only: on push it failed in two seconds with no logs, which is
+what Actions does on a private repository when it cannot start a runner. Once Actions
+can run on the repo, put the `push` and `pull_request` triggers back and it works as
+written.
+
+It exits non-zero on any failure. One hundred checks, currently all passing — the last four
+of them in a real 390×844 touch context, checking that the phone build comes up, that nothing
+on its HUD collides or runs off the edge, and that a quick tap fires an ability. Point it at a
+different build with `GAME_URL` — the bundle in `dist/` has to pass exactly the same set.
+
+## Unofficial fan project
+
+Not affiliated with, endorsed by, or produced by Marvel or The Walt Disney Company. All
+character names are trademarks of their respective owners and are used here as an unpaid
+tribute by a fan. No Marvel art, audio or code is copied or included — everything you see
+is drawn procedurally from the source in this repository.
